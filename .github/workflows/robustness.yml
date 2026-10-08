@@ -1,0 +1,75 @@
+name: Native robustness
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'fuzz/**'
+      - 'Cargo.*'
+      - '.github/workflows/robustness.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: robustness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Maintainer approval
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    environment: ci-review
+    steps:
+      - run: echo "A maintainer approved this workflow."
+
+  asan-and-fuzz:
+    needs: approve
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '1'
+      CARGO_PROFILE_TEST_DEBUG: '1'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+      - name: Prepare artifact directory
+        run: mkdir -p "$RUNNER_TEMP/robustness/corpus" "$RUNNER_TEMP/robustness/crashes"
+      - name: Address and leak sanitizer regression
+        shell: bash
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          RUSTDOCFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_leaks=1
+        run: |
+          export CARGO_TARGET_DIR="$RUNNER_TEMP/asan-target"
+          rustc -vV > "$RUNNER_TEMP/robustness/toolchain.txt"
+          cargo test --workspace --tests --locked -Zbuild-std --target x86_64-unknown-linux-gnu 2>&1 | tee "$RUNNER_TEMP/robustness/asan.log"
+      - name: Install pinned fuzz driver
+        run: cargo install cargo-fuzz --locked --version 0.13.2
+      - name: Fuzz bounded valid and invalid composition streams
+        shell: bash
+        run: |
+          export CARGO_TARGET_DIR="$RUNNER_TEMP/fuzz-target"
+          cargo fuzz run compositions "$RUNNER_TEMP/robustness/corpus" -- -max_total_time=120 -max_len=256 -timeout=10 -rss_limit_mb=2048 -artifact_prefix="$RUNNER_TEMP/robustness/crashes/" 2>&1 | tee "$RUNNER_TEMP/robustness/fuzz.log"
+      - name: Publish validation status
+        if: always()
+        env:
+          RUN_STATUS: ${{ job.status }}
+        run: |
+          echo "Native ASan/fuzz job: $RUN_STATUS. See the artifact for actual execution logs; a configured job alone is not validation evidence." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metricraft-native-robustness
+          path: ${{ runner.temp }}/robustness
+          if-no-files-found: warn
+          retention-days: 30

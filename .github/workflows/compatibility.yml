@@ -1,0 +1,100 @@
+name: Upstream compatibility matrix
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/compatibility/**'
+      - 'scripts/check_backend_results.py'
+      - 'scripts/check_query_parsers.py'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - 'python/metricraft/src/metricraft/builder/**'
+      - 'python/metricraft/src/metricraft/client/**'
+      - 'python/metricraft/src/metricraft/__init__.py'
+      - 'python/metricraft/src/metricraft/_native.py'
+      - 'tests/conformance/**'
+      - '.github/workflows/compatibility.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Maintainer approval
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    environment: ci-review
+    steps:
+      - run: echo "A maintainer approved this workflow."
+
+  upstream-matrix:
+    needs: approve
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.3'
+          cache-dependency-path: tests/conformance/metricsql/go.sum
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Set build output directory
+        run: echo "CARGO_TARGET_DIR=$RUNNER_TEMP/metricraft-target" >> "$GITHUB_ENV"
+      - name: Install pinned PromQL oracle
+        run: |
+          curl -fLsS https://github.com/prometheus/prometheus/releases/download/v3.15.0/prometheus-3.15.0.linux-amd64.tar.gz -o "$RUNNER_TEMP/prometheus.tar.gz"
+          tar -xzf "$RUNNER_TEMP/prometheus.tar.gz" -C "$RUNNER_TEMP" prometheus-3.15.0.linux-amd64/promtool prometheus-3.15.0.linux-amd64/prometheus
+          echo "$RUNNER_TEMP/prometheus-3.15.0.linux-amd64" >> "$GITHUB_PATH"
+      - name: Install pinned MetricsQL backend
+        run: |
+          mkdir -p "$RUNNER_TEMP/victoria-metrics"
+          curl -fLsS https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.153.0/victoria-metrics-linux-amd64-v1.153.0.tar.gz -o "$RUNNER_TEMP/victoria-metrics.tar.gz"
+          tar -xzf "$RUNNER_TEMP/victoria-metrics.tar.gz" -C "$RUNNER_TEMP/victoria-metrics"
+          echo "$RUNNER_TEMP/victoria-metrics" >> "$GITHUB_PATH"
+      - run: python -m pip install ./python/metricraft
+      - run: cargo build --workspace --release --locked
+      - run: echo "METRICRAFT_NATIVE_LIB=$CARGO_TARGET_DIR/release/libmetricraft_ffi.so" >> "$GITHUB_ENV"
+      - name: Discover upstream capabilities and check compatibility
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/compatibility"
+          python scripts/compatibility/check.py --output "$RUNNER_TEMP/compatibility" 2>&1 | tee "$RUNNER_TEMP/compatibility/run.log"
+      - name: Check catalog execution and expected backend values
+        run: python scripts/check_backend_results.py --matrix "$RUNNER_TEMP/compatibility/matrix.json" --output "$RUNNER_TEMP/backend-acceptance"
+      - name: Publish compatibility summary
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/compatibility/summary.md" ]; then
+            cat "$RUNNER_TEMP/compatibility/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Compatibility report could not be generated. See the failed step and available artifact logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f "$RUNNER_TEMP/backend-acceptance/summary.md" ]; then
+            cat "$RUNNER_TEMP/backend-acceptance/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload complete matrix and source provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metricraft-upstream-compatibility
+          path: |
+            ${{ runner.temp }}/compatibility
+            ${{ runner.temp }}/backend-acceptance/*.json
+            ${{ runner.temp }}/backend-acceptance/*.md
+            ${{ runner.temp }}/backend-acceptance/*.log
+            ${{ runner.temp }}/backend-acceptance/*.om
+          if-no-files-found: warn
+          retention-days: 14

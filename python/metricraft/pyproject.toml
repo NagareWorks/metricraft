@@ -1,0 +1,172 @@
+[build-system]
+requires = ["setuptools>=61", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metricraft"
+description = "Immutable PromQL/MetricsQL builder and Prometheus/VictoriaMetrics HTTP client"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "NagareWorks"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+]
+requires-python = ">=3.8"
+dependencies = []
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    # Core testing framework
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.8.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-asyncio>=0.21.0",
+    
+    # Performance testing
+    "pytest-benchmark>=4.0.0",
+    "memory_profiler>=0.60.0",
+    "psutil>=5.8.0",  # For performance monitoring (CPU, memory usage)
+    
+    # Type checking and linting
+    "mypy>=1.0.0",
+    "flake8>=5.0.0",
+    "black>=22.0.0",
+    "isort>=5.10.0",
+    
+    # Additional testing utilities
+    "coverage>=6.0.0",
+    "hypothesis>=6.8.0",
+    "factory_boy>=3.2.0",
+    
+    # Documentation
+    "sphinx>=5.0.0",
+    "sphinx-autodoc-typehints>=1.19.0",
+    
+    # Development utilities
+    "pre-commit>=2.20.0",
+    "tox>=3.25.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/NagareWorks/metricraft"
+Documentation = "https://github.com/NagareWorks/metricraft/tree/main/docs"
+Repository = "https://github.com/NagareWorks/metricraft"
+"Bug Reports" = "https://github.com/NagareWorks/metricraft/issues"
+Contributing = "https://github.com/NagareWorks/metricraft/blob/main/CONTRIBUTING.md"
+
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["metricraft", "metricraft.*"]
+exclude = ["metricraft._legacy", "metricraft._legacy.*"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.exclude-package-data]
+"metricraft" = [
+    "run_tests.py",
+    "tests/*",
+    "tests/**",
+    "htmlcov/**",
+    "build/**",
+    "dist/**",
+    "coverage.xml",
+    "*.whl",
+]
+
+# Use setuptools-scm for versioning; falls back if VCS tags are unavailable
+[tool.setuptools_scm]
+root = "../.."
+fallback_version = "0.3.0"
+local_scheme = "no-local-version"
+
+[tool.pytest.ini_options]
+# Pytest configuration for comprehensive testing
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Asyncio configuration
+asyncio_mode = "auto"
+
+# Tests produce no coverage artifacts unless explicitly requested.
+addopts = ["--import-mode=importlib", "--strict-markers", "-p", "no:cacheprovider", "-ra"]
+
+# Default test paths (excludes performance tests)
+# To run performance tests use: pytest tests/performance/ or pytest -m performance
+norecursedirs = [".*", "build", "dist"]
+
+# Markers for test categorization
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests for component interaction", 
+    "security: Security-focused tests for injection attacks and validation",
+    "performance: Performance and caching behavior tests",
+    "edge_case: Edge case and error condition tests",
+    "validation: Validation system tests",
+    "immutability: Immutability and functional programming tests",
+    "slow: Tests that take longer to run",
+    "stress: Stress tests for high-load scenarios",
+    "asyncio: Async/await tests"
+]
+
+# Test discovery settings
+minversion = "6.0"
+required_plugins = ["pytest-cov", "pytest-mock"]
+
+# Filtering settings
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
+]
+
+[tool.coverage.run]
+# Coverage configuration
+source = ["metricraft"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/conftest.py",
+    "examples_*.py",
+    "test_*.py",
+    "run_tests.py",
+    "comprehensive_demo.py",
+    # Source-only migration fixtures
+    "*/metricraft/_legacy/*",
+]
+
+[tool.coverage.report]
+# Coverage reporting
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
+]
+
+show_missing = true
+precision = 2

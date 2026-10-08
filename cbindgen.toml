@@ -1,0 +1,15 @@
+language = "C"
+include_guard = "METRICRAFT_H"
+pragma_once = true
+include_version = true
+cpp_compat = true
+
+[parse]
+parse_deps = false
+clean = true
+extra_attrs = []
+
+[defines]
+"target_os = windows" = "WINDOWS"
+"target_os = linux" = "LINUX"
+"target_os = macos" = "MACOS"

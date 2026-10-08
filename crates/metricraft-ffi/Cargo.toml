@@ -1,0 +1,12 @@
+[package]
+name = "metricraft-ffi"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "metricraft_ffi"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+metricraft-core = { path = "../metricraft-core" }

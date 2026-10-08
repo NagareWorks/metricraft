@@ -1,0 +1,24 @@
+# Exclude build artifacts and dev-only files from source distribution
+prune build
+prune dist
+prune htmlcov
+prune .pytest_cache
+
+# Generic ignores
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .DS_Store
+
+# Exclude tests and coverage files from sdist
+recursive-exclude tests *
+exclude coverage.xml
+exclude run_tests.py
+exclude *.whl
+
+# Extra safety against nested build outputs
+recursive-exclude build *
+recursive-exclude dist *
+recursive-exclude *.egg-info *
+
+# Source-only migration fixtures are not part of the installed SDK.
+prune src/metricraft/_legacy

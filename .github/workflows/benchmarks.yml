@@ -1,0 +1,88 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main, master, develop, feature-rust-migrate, 'release/**']
+    paths:
+      - 'crates/**'
+      - 'python/metricraft/src/**'
+      - 'benchmarks/**'
+      - 'scripts/run_benchmarks.py'
+      - 'Cargo.*'
+      - '.github/workflows/benchmarks.yml'
+  workflow_dispatch:
+    inputs:
+      memory_seconds:
+        description: Concurrent memory workload duration per platform (seconds)
+        type: number
+        default: 60
+        required: true
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'python/metricraft/src/**'
+      - 'benchmarks/**'
+      - 'scripts/run_benchmarks.py'
+      - 'Cargo.*'
+      - '.github/workflows/benchmarks.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Maintainer approval
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    environment: ci-review
+    steps:
+      - run: echo "A maintainer approved this workflow."
+
+  benchmark:
+    needs: approve
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run unified suite
+        shell: bash
+        env:
+          MEMORY_SECONDS: ${{ inputs.memory_seconds || 60 }}
+        run: |
+          export CARGO_TARGET_DIR="$RUNNER_TEMP/metricraft-benchmark-target"
+          python scripts/run_benchmarks.py --output "$RUNNER_TEMP/metricraft-benchmarks" --memory-seconds "$MEMORY_SECONDS"
+      - name: Publish summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/metricraft-benchmarks/summary.md" ]; then
+            cat "$RUNNER_TEMP/metricraft-benchmarks/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Benchmark setup failed before a report could be generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload measurements and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metricraft-benchmarks-${{ matrix.os }}
+          path: ${{ runner.temp }}/metricraft-benchmarks
+          if-no-files-found: warn
+          retention-days: 30

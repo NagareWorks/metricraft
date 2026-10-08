@@ -1,0 +1,19 @@
+[package]
+name = "metricraft-core"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "metricraft_core"
+
+[features]
+default = []
+
+[dependencies]
+regex = "1.11"
+
+[[test]]
+name = "memory_profile"
+path = "tests/memory_profile.rs"
+harness = false

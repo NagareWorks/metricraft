@@ -1,0 +1,117 @@
+name: Packages
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  native-wheel:
+    name: Native wheel (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container || null }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            runner: ubuntu-22.04
+            container: quay.io/pypa/manylinux_2_28_x86_64:latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux_x86_64
+            library: libmetricraft_ffi.so
+          - name: windows-x86_64
+            runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            platform: win_amd64
+            library: metricraft_ffi.dll
+          - name: macos-x86_64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            platform: macosx_11_0_x86_64
+            library: libmetricraft_ffi.dylib
+          - name: macos-arm64
+            runner: macos-14
+            target: aarch64-apple-darwin
+            platform: macosx_11_0_arm64
+            library: libmetricraft_ffi.dylib
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: runner.os != 'Linux'
+        with:
+          python-version: '3.11'
+      - name: Select manylinux Python
+        if: runner.os == 'Linux'
+        run: echo /opt/python/cp311-cp311/bin >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Test native core and ABI on the target platform
+        run: cargo test --workspace --locked --target ${{ matrix.target }}
+      - name: Build release native library
+        run: cargo build --release --locked -p metricraft-ffi --target ${{ matrix.target }}
+      - name: Build staging wheel
+        run: |
+          python -m pip install build
+          python -m build --wheel python/metricraft --outdir artifacts/staging
+      - name: Bundle platform wheel from the same source commit
+        run: >-
+          python scripts/build_native_wheel.py
+          --staging artifacts/staging
+          --library target/${{ matrix.target }}/release/${{ matrix.library }}
+          --platform ${{ matrix.platform }}
+          --target ${{ matrix.target }}
+          --source-commit ${{ github.sha }}
+          --output artifacts/bundled
+      - name: Repair and check Linux runtime dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          auditwheel repair --plat manylinux_2_28_x86_64 --wheel-dir artifacts/dist artifacts/bundled/*.whl
+      - name: Stage Windows and macOS distribution
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          mkdir -p artifacts/dist
+          cp artifacts/bundled/*.whl artifacts/dist/
+      - name: Verify packaged native library and source identity
+        run: python scripts/check_native_wheel.py artifacts/dist --source-commit ${{ github.sha }}
+      - name: Test installed wheel without checkout or external library fallback
+        run: python scripts/check_python_package.py artifacts/dist --require-bundled-native
+      - uses: actions/upload-artifact@v6
+        with:
+          name: metricraft-dist-${{ matrix.name }}
+          path: artifacts/dist/*.whl
+          if-no-files-found: error
+          retention-days: 14
+
+  sdist:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install build twine
+      - name: Build lightweight source distribution
+        run: python -m build --sdist python/metricraft --outdir artifacts/dist
+      - run: python -m twine check --strict artifacts/dist/*
+      - uses: actions/upload-artifact@v6
+        with:
+          name: metricraft-dist-sdist
+          path: artifacts/dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14

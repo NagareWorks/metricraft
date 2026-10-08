@@ -1,0 +1,28 @@
+# Example per-target cargo config for CI/builders (no Zig required).
+# Copy to .cargo/config.toml locally if you need overrides; .gitignore keeps config.toml out of VCS.
+
+# Linux glibc (manylinux2014/centos7 compatible) – build inside manylinux/centos7 image.
+[target.x86_64-unknown-linux-gnu]
+# linker = "cc"           # default; keep empty to use toolchain-provided gcc/clang
+# rustflags = ["-Clink-arg=-Wl,--as-needed"]
+
+# Linux musl static/mini – requires musl toolchain available in CI image.
+[target.x86_64-unknown-linux-musl]
+# linker = "musl-gcc"
+# rustflags = ["-C", "target-feature=+crt-static"]  # set per your static needs
+
+# macOS (clang/ld64 default).
+[target.x86_64-apple-darwin]
+# linker = "cc"
+
+[target.aarch64-apple-darwin]
+# linker = "cc"
+
+# Windows MSVC (recommended default for Windows artifacts).
+[target.x86_64-pc-windows-msvc]
+# linker = "link"         # default from toolchain
+
+# Windows GNU (only if you need it; ensure mingw toolchain is installed).
+[target.x86_64-pc-windows-gnu]
+# linker = "x86_64-w64-mingw32-gcc"
+# rustflags = ["-Clink-arg=-static-libgcc"]

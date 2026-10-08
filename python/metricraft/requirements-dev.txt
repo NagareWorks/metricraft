@@ -1,0 +1,30 @@
+# Development and testing dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.8.0
+pytest-timeout>=2.1.0
+pytest-asyncio>=0.21.0
+
+# Type checking and linting
+mypy>=1.0.0
+flake8>=5.0.0
+black>=22.0.0
+isort>=5.10.0
+
+# Additional testing utilities
+coverage>=6.0.0
+hypothesis>=6.0.0
+factory_boy>=3.2.0
+
+# Performance testing
+pytest-benchmark>=4.0.0
+memory_profiler>=0.60.0
+psutil>=5.8.0  # For performance monitoring (CPU, memory usage)
+
+# Documentation
+sphinx>=5.0.0
+sphinx-autodoc-typehints>=1.19.0
+
+# Development utilities
+pre-commit>=2.20.0
+tox>=3.25.0

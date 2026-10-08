@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">MetriCraft</title>
+  <desc id="desc">Compose and reuse immutable metrics queries with a Rust core, then save query text or execute it through the client.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#0b1020"/><stop offset="1" stop-color="#102d36"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#19c2c9" stop-opacity=".12"/><stop offset="1" stop-color="#19c2c9" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#9edbdf" stroke-opacity=".055"/>
+    </pattern>
+    <clipPath id="round"><rect width="1200" height="360" rx="20"/></clipPath>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="m0 0 6 3-6 3" fill="none" stroke="#5b989f"/></marker>
+  </defs>
+  <g clip-path="url(#round)">
+    <rect width="1200" height="360" fill="url(#bg)"/>
+    <rect width="1200" height="360" fill="url(#grid)"/>
+    <ellipse cx="860" cy="150" rx="450" ry="300" fill="url(#glow)"/>
+  </g>
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    <text x="48" y="62" font-size="12" font-weight="600" letter-spacing="3" fill="#70dce0">COMPOSE / REUSE / QUERY</text>
+    <text x="46" y="143" font-size="64" font-weight="700" letter-spacing="-2" fill="#f2f7ff">MetriCraft</text>
+    <text x="49" y="187" font-size="23" fill="#d2e3ee">Metrics queries, thoughtfully composed.</text>
+    <text x="49" y="221" font-size="17" fill="#91aebf">An immutable Python API. A shared Rust core.</text>
+    <g font-size="13" font-weight="600" text-anchor="middle">
+      <rect x="49" y="264" width="90" height="31" rx="15.5" fill="#143443" stroke="#246473"/>
+      <text x="94" y="284" fill="#7ddde3">PromQL</text>
+      <rect x="150" y="264" width="100" height="31" rx="15.5" fill="#163831" stroke="#326452"/>
+      <text x="200" y="284" fill="#9ce5bb">MetricsQL</text>
+      <rect x="261" y="264" width="111" height="31" rx="15.5" fill="#302f2e" stroke="#655744"/>
+      <text x="316.5" y="284" fill="#f2ce87">SDK + client</text>
+    </g>
+    <rect x="615" y="45" width="541" height="270" rx="16" fill="#0a1725" fill-opacity=".75" stroke="#264451"/>
+    <text x="640" y="76" font-size="11" letter-spacing="2" fill="#88a8b7">SHARE THE TREE. KEEP THE TEXT.</text>
+    <g fill="none" stroke="#5b989f" stroke-width="1.5" marker-end="url(#arrow)">
+      <path d="M679 143H715"/>
+      <path d="M679 143C702 143 693 219 715 219"/>
+      <path d="M679 219H715"/>
+      <path d="M757 143C787 143 778 181 800 181"/>
+      <path d="M757 219C787 219 778 181 800 181"/>
+      <path d="M842 181H883"/>
+      <path d="M1000 153V120H1030"/>
+      <path d="M1000 207V251H1030"/>
+    </g>
+    <g text-anchor="middle" font-family="Consolas, Menlo, monospace" font-size="16">
+      <rect x="639" y="123" width="40" height="40" rx="10" fill="#173941" stroke="#48aeb4"/>
+      <text x="659" y="149" fill="#a9f0e7">a</text>
+      <rect x="639" y="199" width="40" height="40" rx="10" fill="#173941" stroke="#48aeb4"/>
+      <text x="659" y="225" fill="#a9f0e7">b</text>
+      <rect x="716" y="123" width="40" height="40" rx="10" fill="#193d35" stroke="#5aac87"/>
+      <text x="736" y="149" fill="#b5edcb">f</text>
+      <rect x="716" y="199" width="40" height="40" rx="10" fill="#193d35" stroke="#5aac87"/>
+      <text x="736" y="225" fill="#b5edcb">g</text>
+      <rect x="801" y="161" width="40" height="40" rx="10" fill="#39372a" stroke="#b39759"/>
+      <text x="821" y="187" fill="#ffdb91">+</text>
+    </g>
+    <text x="651" y="280" font-size="12" fill="#89a8b9">Immutable nodes</text>
+    <rect x="884" y="153" width="145" height="54" rx="10" fill="#102d38" stroke="#4b949f"/>
+    <text x="899" y="175" font-size="11" fill="#79c8d2">QUERY TEXT</text>
+    <text x="899" y="193" font-family="Consolas, Menlo, monospace" font-size="15" fill="#e0f3f7">sum(rate(...))</text>
+    <text x="1041" y="115" font-size="13" fill="#e2eaf3">Your storage</text>
+    <text x="1041" y="134" font-size="11" fill="#8ca9b9">YAML · XML · DB</text>
+    <text x="1041" y="247" font-size="13" fill="#e2eaf3">Client</text>
+    <path d="m1042 273 13-1 9-11 10 13 10-19 10 8 10-2 16-1" fill="none" stroke="#70d9ac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

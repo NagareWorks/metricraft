@@ -10,6 +10,28 @@ EXTENDED = ("promql-extended-range-selectors",)
 FILL = ("promql-binop-fill-modifiers",)
 
 
+def test_info_data_label_selector_exception_does_not_leak():
+    data = Q.from_labels(k="")
+    info = Q.from_metric("up").info(data)
+    assert info.build("promql", experimental_functions=True) == 'info(up, {k=""})'
+    assert info.analyze()["complexity"]["output_bytes"] == len('info(up, {k=""})')
+    for query in (data, info + data, data.info(Q.from_labels(k="x"))):
+        with pytest.raises(ValueError, match="excludes empty"):
+            query.build("promql", experimental_functions=True)
+
+
+@pytest.mark.parametrize("pattern", [r"\141", r"\0", r"\07", r"[\141-\143]", r"\Q\141\E"])
+def test_unnamed_re2_octal_matchers_keep_the_original_pattern(pattern):
+    query = Q.from_labels().where_regex("job", pattern)
+    assert query.build("promql") == '{job=~' + json.dumps(pattern) + '}'
+
+
+@pytest.mark.parametrize("pattern", [r"\1", r"\12"])
+def test_re2_backreferences_are_not_mistaken_for_octal(pattern):
+    with pytest.raises(ValueError, match="regex"):
+        Q.from_labels().where_regex("job", pattern)
+
+
 def test_scoped_templates_are_immutable_and_do_not_leak_bindings():
     x = Q.reference("x")
     f = Q.template("x", body=x.rate("5m"))

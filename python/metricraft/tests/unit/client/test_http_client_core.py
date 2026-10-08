@@ -435,8 +435,8 @@ class TestSyncHTTPClient:
         client = SyncHTTPClient(timeout=(5, 10))
         assert client.connect_timeout == 5
         assert client.timeout == 10
-        assert client._resolve_timeout(None) == 10
-        assert client._resolve_timeout(2) == 2
+        assert client._resolve_timeouts(None) == (5, 10)
+        assert client._resolve_timeouts(2) == (2, 2)
 
     def test_timeout_single_value_sequence(self):
         client = SyncHTTPClient(timeout=[7])

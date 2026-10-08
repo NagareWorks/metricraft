@@ -41,11 +41,13 @@ pub(super) enum Part<'a> {
     Label(&'a str),
     Number(f64),
     Child(&'a Expr),
+    InfoSelector(&'a Expr),
     DurationChild(&'a Expr),
     Bindings(&'a [(String, Expr)]),
     Parameters(&'a [String]),
     EndScope,
     Selector(&'a Selector),
+    InfoLabels(&'a Selector),
     SelectorBody(&'a Selector),
     SelectorInside(&'a Expr),
     SelectorFilter(&'a super::Extra),
@@ -142,6 +144,10 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
                 emit(Child(args.last().unwrap()));
                 emit(Text(", "));
                 arguments(&args[..args.len() - 1], &mut emit);
+            } else if name == "info" && args.len() == 2 {
+                emit(Child(&args[0]));
+                emit(Text(", "));
+                emit(Part::InfoSelector(&args[1]));
             } else {
                 arguments(args, &mut emit);
             }
@@ -284,7 +290,10 @@ pub(super) fn complexity(kind: &Kind) -> Complexity {
                 write!(count, "{n}").unwrap();
                 (count.0, 0)
             }
-            Part::Child(child) | Part::DurationChild(child) | Part::SelectorValue(child) => (
+            Part::Child(child)
+            | Part::InfoSelector(child)
+            | Part::DurationChild(child)
+            | Part::SelectorValue(child) => (
                 child.0.complexity.output_bytes,
                 child.0.complexity.expanded_nodes,
             ),
@@ -306,7 +315,7 @@ pub(super) fn complexity(kind: &Kind) -> Complexity {
                     .map_or(0, |m| m.count)
                     .saturating_add(1),
             ),
-            Part::Selector(selector) => (
+            Part::Selector(selector) | Part::InfoLabels(selector) => (
                 selector.output_bytes(),
                 selector.matchers.as_ref().map_or(0, |m| m.count),
             ),
@@ -377,8 +386,11 @@ pub(super) fn build_observed(
             Part::Quoted(s) => quote(s, &mut out),
             Part::Label(s) => write_label(s, &mut out),
             Part::Number(n) => write!(out, "{n}").unwrap(),
-            Part::Selector(selector) => {
-                if mode == Mode::PromQl && !selector.prom_valid() {
+            Part::Selector(selector) | Part::InfoLabels(selector) => {
+                if mode == Mode::PromQl
+                    && !matches!(part, Part::InfoLabels(_))
+                    && !selector.prom_valid()
+                {
                     return Err(
                         "PromQL selectors require a metric or a matcher that excludes empty values"
                             .into(),
@@ -461,7 +473,8 @@ pub(super) fn build_observed(
                 out.push_str(matcher.op);
                 quote(&matcher.value, &mut out);
             }
-            Part::Child(expr) | Part::DurationChild(expr) => {
+            Part::Child(expr) | Part::InfoSelector(expr) | Part::DurationChild(expr) => {
+                let in_info = matches!(part, Part::InfoSelector(_));
                 let in_duration = matches!(part, Part::DurationChild(_));
                 if in_duration {
                     super::literals::validate_duration_node(expr)?;
@@ -524,6 +537,12 @@ pub(super) fn build_observed(
                     pending.push(if in_duration {
                         if let Part::Child(c) = part {
                             Part::DurationChild(c)
+                        } else {
+                            part
+                        }
+                    } else if in_info {
+                        if let Part::Selector(s) = part {
+                            Part::InfoLabels(s)
                         } else {
                             part
                         }

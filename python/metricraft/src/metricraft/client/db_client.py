@@ -3,13 +3,11 @@ Synchronous and asynchronous Prometheus/VictoriaMetrics HTTP client.
 """
 
 import logging
-import time
 from weakref import finalize
-from datetime import datetime
 from functools import cached_property
 from typing import Any, Dict, Iterable, List, Optional, Union
 
-from metricraft.client._time import epoch_seconds, ingestion_milliseconds, query_time
+from metricraft.client._time import ingestion_milliseconds, query_time, range_bounds
 from metricraft.client._resources import TransportResources
 from metricraft.client.http_client import SyncHTTPClient, AsyncHTTPClient
 from metricraft.models import (
@@ -222,10 +220,6 @@ class DatabaseClient:
     def _normalize_time(self, time_val: TimeValue) -> Optional[str]:
         """Preserve query timestamp precision; strings pass through to the backend."""
         return query_time(time_val)
-
-    def _to_epoch_seconds(self, time_val: TimeValue) -> Optional[float]:
-        """Convert numeric/datetime inputs for range arithmetic without truncation."""
-        return epoch_seconds(time_val)
 
     def _setup_connection(self) -> None:
         """Create or inject HTTP transports for the resolved endpoint."""
@@ -461,20 +455,7 @@ class DatabaseClient:
             ConnectionError: For connection errors
             ValueError: If account_id is provided for VMSingleConfig
         """
-        end_epoch = self._to_epoch_seconds(end)
-        if end_epoch is not None:
-            end = end_epoch
-        elif end is None:
-            end_epoch = int(time.time())
-            end = end_epoch
-
-        if start is None:
-            reference = end_epoch if end_epoch is not None else int(time.time())
-            start = reference - 3600  # 1 hour before end
-        else:
-            start_epoch = self._to_epoch_seconds(start)
-            if start_epoch is not None:
-                start = start_epoch
+        start, end = range_bounds(start, end)
 
         query_str = self._prepare_query(query)
         base_url = self._get_query_url_with_account(account_id)
@@ -713,20 +694,7 @@ class DatabaseClient:
         if not self.async_client:
             raise RuntimeError("Async support not available")
 
-        end_epoch = self._to_epoch_seconds(end)
-        if end_epoch is not None:
-            end = end_epoch
-        elif end is None:
-            end_epoch = int(time.time())
-            end = end_epoch
-
-        if start is None:
-            reference = end_epoch if end_epoch is not None else int(time.time())
-            start = reference - 3600  # 1 hour before end
-        else:
-            start_epoch = self._to_epoch_seconds(start)
-            if start_epoch is not None:
-                start = start_epoch
+        start, end = range_bounds(start, end)
 
         query_str = self._prepare_query(query)
         base_url = self._get_query_url_with_account(account_id)

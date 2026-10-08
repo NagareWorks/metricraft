@@ -310,11 +310,10 @@ class SyncHTTPClient:
 
         raise TypeError("Unsupported request body type; expected bytes, str, or mapping")
 
-    def _resolve_timeout(self, timeout: Optional[TimeoutType]) -> float:
+    def _resolve_timeouts(self, timeout: Optional[TimeoutType]) -> Tuple[float, float]:
         if timeout is None:
-            return self.timeout
-        _, read_timeout = _normalize_timeout(timeout)
-        return read_timeout
+            return self.connect_timeout, self.timeout
+        return _normalize_timeout(timeout)
 
     def _execute(
         self,
@@ -328,8 +327,13 @@ class SyncHTTPClient:
         default_content_type: Optional[str],
         text_response: bool = False,
     ) -> Union[Dict[str, Any], str]:
-        timeout_value = self._resolve_timeout(timeout)
+        connect_timeout, read_timeout = self._resolve_timeouts(timeout)
         opener = self._opener or urlopen
+        if connect_timeout != read_timeout:
+            if self._opener is not None:
+                raise ValueError("Unequal connect/read timeouts require the default opener or a custom HTTP client")
+            from ._timeouts import phased_opener
+            opener = phased_opener(read_timeout)
         attempt = 1
 
         while True:
@@ -343,7 +347,7 @@ class SyncHTTPClient:
             )
 
             try:
-                with opener(request, timeout=timeout_value) as response:
+                with opener(request, timeout=connect_timeout) as response:
                     raw = response.read().decode("utf-8")
                     if text_response:
                         return raw

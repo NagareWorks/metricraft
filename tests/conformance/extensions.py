@@ -21,6 +21,8 @@ def cases():
         "unitless_range": a.range("300").rate(),
         "zero_offset": a.offset("0s"),
         "re2_literal": Q.from_labels().where_regex("job", r"\Qapi.+\E"),
+        "re2_octal": Q.from_labels().where_regex("job", r"\141"),
+        "re2_nul": Q.from_labels().where_regex("job", r"\0"),
         "reserved_metric": Q.from_metric("NaN").where_eq("job", "api"),
     }
     for name, q in common.items():

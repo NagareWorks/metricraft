@@ -18,5 +18,10 @@ excluded from both the wheel and source distribution.
 Query timestamps preserve fractional seconds. Numeric times are epoch seconds;
 values whose magnitude exceeds `1e10` are interpreted as milliseconds. Ingestion
 converts numeric or absolute ISO/datetime inputs to exposition milliseconds;
-relative time strings are supported only for queries. Custom transports used for
+relative time strings are supported only for queries. When a range query uses
+a relative `end`, provide `start` explicitly. Custom transports used for
 health checks should implement `get_text(url)` for plain-text health responses.
+
+The built-in transport supports separate `(connect, read)` timeout budgets,
+including TLS connection setup. A custom urllib opener accepts one timeout;
+use equal budgets with it, or supply a custom HTTP client for separate phases.

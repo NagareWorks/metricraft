@@ -2,6 +2,7 @@
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Optional
+import time
 
 from metricraft.models import TimeValue
 
@@ -14,8 +15,16 @@ def _numeric_seconds(value) -> Decimal:
 
 
 def epoch_seconds(value: TimeValue) -> Optional[float]:
-    if value is None or isinstance(value, str):
+    if value is None:
         return None
+    if isinstance(value, str):
+        try:
+            return float(_numeric_seconds(value))
+        except InvalidOperation:
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+            except ValueError as exc:
+                raise ValueError("Provide start explicitly when end is not an absolute timestamp") from exc
     if isinstance(value, datetime):
         return value.timestamp()
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -53,3 +62,12 @@ def ingestion_milliseconds(value: TimeValue) -> int:
     else:
         raise ValueError("Ingestion requires an absolute timestamp")
     return int(seconds * 1000)
+
+
+def range_bounds(start: TimeValue, end: TimeValue):
+    """Default to the preceding hour without rewriting explicit backend time strings."""
+    if end is None:
+        end = int(time.time())
+    if start is None:
+        start = epoch_seconds(end) - 3600
+    return start, end

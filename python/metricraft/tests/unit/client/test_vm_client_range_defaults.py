@@ -6,7 +6,7 @@ def test_query_range_defaults(monkeypatch):
     client = DatabaseClient()
 
     # Fix current time
-    monkeypatch.setattr('metricraft.client.db_client.time', type('T', (), {'time': staticmethod(lambda: 1700003600)})())
+    monkeypatch.setattr('metricraft.client._time.time', type('T', (), {'time': staticmethod(lambda: 1700003600)})())
 
     calls = {}
     class Dummy:

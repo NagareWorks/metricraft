@@ -119,12 +119,12 @@ impl Selector {
     }
 }
 
-// Go/RE2 supports \Q...\E, which Rust's regex parser does not. Translate only
-// that quoting form for the empty-value check; preserve the user's actual RE2
+// Translate Go/RE2 quoting and octal escapes for the empty-value check;
+// preserve the user's actual RE2
 // pattern in the emitted query. Escaped backslashes never open a quoted block.
 fn unquote_re2(pattern: &str) -> String {
     let mut result = String::with_capacity(pattern.len());
-    let mut chars = pattern.chars();
+    let mut chars = pattern.chars().peekable();
     while let Some(c) = chars.next() {
         if c != '\\' {
             result.push(c);
@@ -148,6 +148,24 @@ fn unquote_re2(pattern: &str) -> String {
                     }
                 }
                 result.push_str(&regex::escape(&literal));
+            }
+            Some(c @ '0'..='7') => {
+                let mut digits = String::from(c);
+                for _ in 0..2 {
+                    if chars.peek().is_some_and(|c| matches!(c, '0'..='7')) {
+                        digits.push(chars.next().unwrap());
+                    } else {
+                        break;
+                    }
+                }
+                if c == '0' || digits.len() == 3 {
+                    let value = u32::from_str_radix(&digits, 8).unwrap();
+                    result.push_str(&format!("\\x{{{value:x}}}"));
+                } else {
+                    // RE2 rejects nonzero one/two-digit backreference forms.
+                    result.push('\\');
+                    result.push_str(&digits);
+                }
             }
             Some(c) => {
                 result.push('\\');

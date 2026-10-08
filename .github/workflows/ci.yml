@@ -19,16 +19,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  approve:
-    name: Maintainer approval
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    environment: ci-review
-    steps:
-      - run: echo "A maintainer approved this workflow."
-
   format-and-tooling:
-    needs: approve
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -52,7 +43,6 @@ jobs:
       - run: python -m unittest discover -s scripts/tests -v
 
   python:
-    needs: approve
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +69,6 @@ jobs:
         run: python scripts/dev.py smoke
 
   conformance:
-    needs: approve
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -138,7 +127,7 @@ jobs:
     uses: ./.github/workflows/packages.yml
 
   required-checks:
-    needs: [approve, format-and-tooling, python, conformance, packages]
+    needs: [format-and-tooling, python, conformance, packages]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 5

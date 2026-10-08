@@ -96,13 +96,16 @@ Use `--require-bundled-native` to additionally verify the packaged Rust builder.
 
 ## GitHub Actions
 
-A maintainer with write access must approve workflow execution through the
-`ci-review` environment before repository code is checked out or executed.
-All external contributors also require GitHub's fork-workflow approval.
-The `release` environment separately protects package publication. Repository
-administrators must keep environment reviewers limited to current maintainers
-with write access; adding a collaborator does not automatically add a reviewer.
+CI runs automatically for maintainers with write access and contributors who have
+already had a commit or pull request merged into this repository. Configure
+GitHub Actions' fork-workflow policy to **Require approval for first-time
+contributors**. A maintainer with write access must review and approve workflows
+from contributors without a prior merged contribution. Opening a second pull
+request does not by itself remove that requirement.
 
+The `release` environment separately protects package publication. Repository
+administrators must keep its reviewers limited to current maintainers with write
+access; adding a collaborator does not automatically add a release reviewer.
 
 `Benchmarks` uses `python scripts/run_benchmarks.py --output <external-directory>`
 on Linux and Windows for relevant pull requests, branch pushes and manual runs.
@@ -149,14 +152,13 @@ read-only permissions and does not need publication credentials.
 
 ## Submit a change
 
-Create a focused branch and pull request. Changes to `main` require a current
-approval from someone with write access, approval of the latest push by someone
-other than its pusher, resolved review conversations and successful
-`required-checks`. New commits dismiss stale approvals. Only maintainers with
-write access can merge, using squash (preferred) or rebase; merge commits,
-force pushes and branch deletion are disabled on `main`.
+Create a focused branch and pull request. Changes to `main` require resolved
+review conversations and successful `required-checks`. Maintainers with write
+access can merge, including their own pull requests; a separate approving review
+is not required. Use squash (preferred) or rebase. Merge commits, force pushes
+and branch deletion are disabled on `main`.
 
- Describe the problem, resulting behavior,
+Describe the problem, resulting behavior,
 compatibility impact and checks performed. Keep unrelated formatting out of the
 change. Update the relevant example when an API changes; keep README short.
 Use descriptive commit subjects (for example `fix(query): preserve shared selectors`).

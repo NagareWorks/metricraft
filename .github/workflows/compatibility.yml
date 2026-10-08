@@ -25,16 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  approve:
-    name: Maintainer approval
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    environment: ci-review
-    steps:
-      - run: echo "A maintainer approved this workflow."
-
   upstream-matrix:
-    needs: approve
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:

@@ -42,8 +42,11 @@ def verify(wheel, source_commit=None):
             raise ValueError("Expected exactly one matching native library")
         record_name = metadata_names[0].rsplit("/", 1)[0] + "/RECORD"
         rows = list(csv.reader(io.StringIO(archive.read(record_name).decode())))
-        if len(rows) != len(names) or {row[0] for row in rows} != set(names):
-            raise ValueError("RECORD must list every wheel entry exactly once")
+        # auditwheel may write explicit ZIP directory entries. RECORD describes
+        # installed files, so directories must not participate in this check.
+        files = {entry.filename for entry in archive.infolist() if not entry.is_dir()}
+        if len(rows) != len(files) or {row[0] for row in rows} != files:
+            raise ValueError("RECORD must list every wheel file exactly once")
         for name, digest, size in rows:
             if name == record_name:
                 if digest or size:

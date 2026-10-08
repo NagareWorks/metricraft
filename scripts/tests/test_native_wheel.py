@@ -52,8 +52,17 @@ class NativeWheelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source commit"):
             verify(self.build(), "b" * 40)
 
+    def test_explicit_zip_directories_do_not_need_record_rows(self):
+        wheel = self.build()
+        with zipfile.ZipFile(wheel, "a") as archive:
+            for name in ("metricraft/", "metricraft/native/", "metricraft-0.3.0.dist-info/"):
+                archive.writestr(name, b"")
+        self.assertEqual(verify(wheel, self.commit)["source_commit"], self.commit)
+
     def test_corrupted_library_is_rejected(self):
         wheel = self.build()
+        with zipfile.ZipFile(wheel, "a") as archive:
+            archive.writestr("metricraft/native/", b"")
         self.rewrite(wheel, lambda entries: entries.update({"metricraft/native/metricraft_ffi.dll": b"changed"}))
         with self.assertRaisesRegex(ValueError, "integrity"):
             verify(wheel)
@@ -67,7 +76,7 @@ class NativeWheelTests(unittest.TestCase):
             csv.writer(output).writerows(row for row in rows if row[0] != "metricraft/__init__.py")
             entries[name] = output.getvalue().encode()
         self.rewrite(wheel, omit)
-        with self.assertRaisesRegex(ValueError, "every wheel entry"):
+        with self.assertRaisesRegex(ValueError, "every wheel file"):
             verify(wheel)
 
     def test_wrong_platform_and_source_only_wheel_are_rejected(self):

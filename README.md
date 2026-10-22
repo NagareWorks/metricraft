@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="https://nagareworks.github.io/metricraft/">Documentation</a> ·
   <a href="#start-here">Get started</a> ·
   <a href="docs/examples/01_configurable_query/README.md">Examples</a> ·
   <a href="docs/language-support.md">Language support</a> ·

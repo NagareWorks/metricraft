@@ -1,0 +1,180 @@
+---
+import Navigation from "../components/Navigation.astro";
+import { href, repository } from "../data/navigation.mjs";
+import "@fontsource/manrope/latin-400.css";
+import "@fontsource/manrope/latin-500.css";
+import "@fontsource/manrope/latin-600.css";
+import "@fontsource/manrope/latin-700.css";
+import "@fontsource/manrope/latin-800.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "../styles/site.css";
+interface Props {
+  title: string;
+  description: string;
+  current?: string;
+  home?: boolean;
+  noindex?: boolean;
+}
+const {
+  title,
+  description,
+  current,
+  home = false,
+  noindex = false,
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {
+        home
+          ? "MetriCraft — Queries, thoughtfully composed."
+          : `${title} · MetriCraft`
+      }
+    </title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={`${title} · MetriCraft`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href={`${href()}favicon.svg`} />
+    <script is:inline>
+      try {
+        const preference = localStorage.getItem("metricraft-theme");
+        document.documentElement.dataset.theme =
+          preference === "dark" ||
+          (!preference && matchMedia("(prefers-color-scheme: dark)").matches)
+            ? "dark"
+            : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+  </head>
+  <body class:list={[home && "home"]}>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href={href()} aria-label="MetriCraft home">
+        <svg viewBox="0 0 40 40" width="32" height="32" aria-hidden="true"
+          ><rect width="40" height="40" rx="11" fill="#164c43"></rect><path
+            d="M10 28V12l10 9 10-9v16M20 21v7"
+            stroke="#c4f1d7"
+            stroke-width="2.4"
+            fill="none"
+            stroke-linejoin="round"></path></svg
+        >
+        MetriCraft<span class="brand-divider">/</span><span class="brand-docs"
+          >docs</span
+        >
+      </a>
+      <nav class="header-nav" aria-label="Main">
+        <a href={href("getting-started")}>Guide</a><a
+          href={href("reference/api")}>API</a
+        ><a href={href("examples/structured-selections")}>Examples</a>
+      </nav>
+      <div class="header-actions">
+        <button
+          class="search-trigger"
+          data-search-open
+          aria-label="Search documentation"
+          ><span aria-hidden="true">⌕</span><span class="search-label"
+            >Search docs</span
+          ><kbd>⌘ K</kbd></button
+        >
+        <button
+          class="icon-button"
+          id="theme-toggle"
+          aria-label="Toggle color theme"
+          title="Toggle color theme"
+          ><svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+            ><circle cx="12" cy="12" r="4"></circle><path
+              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M19 5l-1.5 1.5m-11 11L5 19"
+            ></path></svg
+          ></button
+        >
+        <a class="github-link" href={repository}
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+        <button
+          class="icon-button mobile-menu"
+          id="menu-open"
+          aria-label="Open navigation"
+          aria-controls="mobile-navigation"
+          ><svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg
+          ></button
+        >
+      </div>
+    </header>
+    <slot />
+    <footer class="site-footer">
+      <a class="footer-brand" href={href()}>MetriCraft</a><span
+        >Made for the way queries change.</span
+      ><div>
+        <a href={`${repository}/blob/main/LICENSE`}>Apache 2.0</a><a
+          href={href("contributing")}>Contribute</a
+        ><a href={repository}>NagareWorks ↗</a>
+      </div>
+    </footer>
+    <dialog id="mobile-navigation" aria-label="Documentation navigation">
+      <div class="dialog-top">
+        <strong>Explore the docs</strong><button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close navigation">✕</button
+        >
+      </div><Navigation current={current} />
+    </dialog>
+    <dialog id="search-dialog" aria-labelledby="search-heading">
+      <div class="dialog-top">
+        <h2 id="search-heading">Find your next step</h2><button
+          class="icon-button"
+          data-close-dialog
+          aria-label="Close search">✕</button
+        >
+      </div>
+      <label class="sr-only" for="search-input">Search documentation</label>
+      <input
+        type="search"
+        id="search-input"
+        placeholder="Try “grouping”, “async”, or “memory”…"
+        autocomplete="off"
+      />
+      <p
+        class="search-status"
+        id="search-status"
+        role="status"
+        aria-live="polite"
+      >
+        Search guides, examples and the Python API.
+      </p>
+      <ol id="search-results"></ol>
+      <div class="search-footer">
+        <span>Local search · no tracking</span><span
+          ><kbd>esc</kbd> to close</span
+        >
+      </div>
+    </dialog>
+    <script src="../scripts/site.ts"></script>
+  </body>
+</html>

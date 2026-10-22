@@ -1,0 +1,29 @@
+---
+import { groups, href } from "../data/navigation.mjs";
+interface Props {
+  current?: string;
+}
+const { current } = Astro.props;
+---
+
+<nav aria-label="Documentation">
+  {
+    groups.map((group) => (
+      <div class="nav-group">
+        <p>{group.title}</p>
+        <ul>
+          {group.pages.map((page) => (
+            <li>
+              <a
+                href={href(page.slug)}
+                aria-current={current === page.slug ? "page" : undefined}
+              >
+                {page.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</nav>

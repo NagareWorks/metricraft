@@ -1,0 +1,93 @@
+---
+import { getEntry, render } from "astro:content";
+import Shell from "../layouts/Shell.astro";
+import Navigation from "../components/Navigation.astro";
+import ApiIndex from "../components/ApiIndex.astro";
+import { pages, href, repository } from "../data/navigation.mjs";
+export function getStaticPaths() {
+  return pages.map((page, index) => ({
+    params: { slug: page.slug },
+    props: { page, index },
+  }));
+}
+const { page, index } = Astro.props;
+const entry = await getEntry("docs", page.source.replace(/\.md$/, ""));
+if (!entry) throw new Error(`Missing documentation: ${page.source}`);
+const { Content, headings } = await render(entry);
+const toc = headings.filter((heading) => heading.depth === 2);
+if (page.slug === "reference/api")
+  toc.push({ depth: 2, slug: "signature-index", text: "Signature index" });
+const previous = pages[index - 1],
+  next = pages[index + 1];
+---
+
+<Shell title={page.title} description={page.description} current={page.slug}>
+  <div class="docs-layout">
+    <aside class="sidebar">
+      <div class="edition">
+        <span class="status-dot"></span> Development docs <span>main</span>
+      </div><Navigation current={page.slug} />
+    </aside>
+    <main id="content" class="doc-main" data-pagefind-body>
+      <div class="eyebrow">{page.group}</div>
+      <h1 data-pagefind-meta="title">{page.title}</h1>
+      <p class="doc-intro">{page.description}</p>
+      {
+        page.slug === "reference/api" && (
+          <p class="api-shortcut" data-pagefind-ignore>
+            <a href="#signature-index">Browse the signature index ↓</a>
+          </p>
+        )
+      }
+      <div class="prose">
+        <Content />{page.slug === "reference/api" && <ApiIndex />}
+      </div>
+      <div class="source-link" data-pagefind-ignore>
+        <a href={`${repository}/blob/main/${page.source}`}
+          >Read this page on GitHub ↗</a
+        >
+      </div>
+      <nav
+        class="page-neighbors"
+        aria-label="Adjacent pages"
+        data-pagefind-ignore
+      >
+        {
+          previous ? (
+            <a href={href(previous.slug)}>
+              <span>← Previous</span>
+              {previous.title}
+            </a>
+          ) : (
+            <div />
+          )
+        }
+        {
+          next && (
+            <a href={href(next.slug)}>
+              <span>Next →</span>
+              {next.title}
+            </a>
+          )
+        }
+      </nav>
+    </main>
+    <aside class="table-of-contents">
+      <span class="eyebrow">On this page</span><nav aria-label="On this page">
+        <ul>
+          {
+            toc.map((heading) => (
+              <li>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav><div class="toc-note">
+        Have a better example?<br /><a href={href("contributing")}
+          >Help shape the docs ↗</a
+        >
+      </div>
+    </aside>
+  </div>
+</Shell>

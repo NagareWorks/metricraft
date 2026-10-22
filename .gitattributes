@@ -1,0 +1,2 @@
+# Keep the website formatter consistent across Windows and Unix checkouts.
+website/** text eol=lf

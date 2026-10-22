@@ -6,6 +6,7 @@ import init, {build_query} from "../public/playground-wasm/builder.js";
 import {evaluate} from "../src/playground/evaluate.ts";
 import {pythonCode} from "../src/playground/python.ts";
 import {cases} from "../tests/cases.mjs";
+import {assertions} from "./prometheus-oracle.mjs";
 await init({module_or_path: readFileSync(new URL("../public/playground-wasm/builder_bg.wasm", import.meta.url))});
 const all = cases();
 const special = {...all[0].plan, matchers: [{label: "job", op: "=", value: 'x"} or up #\n\\\t中文'}]};
@@ -32,14 +33,37 @@ const tests = all.flatMap(({plan, data}) => {
     return {series: `${s.metric}{${labelText}}`, values: Array.from({length: 21}, (_, i) => values.has(i * 30) ? String(values.get(i * 30)) : "_").join(" ")};
   });
   return [0, 30, 300, 600, 900, 901].map(time => ({interval: "30s", input_series,
-    promql_expr_test: [{expr: build_query(JSON.stringify(plan)), eval_time: `${time}s`, exp_samples: evaluate(plan, data, time).map(s => ({
-      labels: `{${Object.entries(s.labels).map(([k,v]) => `${k}=${JSON.stringify(v)}`).join(",")}}`, value: s.value,
-    }))}],
+    promql_expr_test: assertions(build_query(JSON.stringify(plan)), time, evaluate(plan, data, time), data),
   }));
 });
 const output = resolve(".generated/playground-prometheus.json");
 mkdirSync(resolve(".generated"), {recursive: true});
-writeFileSync(output, JSON.stringify({evaluation_interval: "1s", fuzzy_compare: true, tests}));
+writeFileSync(output, JSON.stringify({evaluation_interval: "1s", tests}));
 const promtool = spawnSync(process.env.PROMTOOL || "promtool", ["test", "rules", output], {encoding: "utf8"});
 if (promtool.status !== 0) throw new Error(promtool.stdout + promtool.stderr || String(promtool.error));
 console.log(`Prometheus differential evaluation: ${tests.length} scenarios passed.`);
+
+// Exercise the comparison itself, including deliberately wrong expected results.
+const baseline = {labels: {__name__: "m", job: "$literal"}, value: 0.2};
+const controls = [
+  ["exact", [baseline], true],
+  ["roundoff", [{...baseline, value: 0.19999999999999998}], true],
+  ["wrong value", [{...baseline, value: 0.21}], false],
+  ["wrong label", [{...baseline, labels: {...baseline.labels, job: "other"}}], false],
+  ["wrong metric name", [{...baseline, labels: {...baseline.labels, __name__: "other"}}], false],
+  ["missing series", [], false],
+  ["non-finite NaN", [baseline], false, "NaN"],
+  ["non-finite infinity", [baseline], false, "+Inf"],
+];
+for (const [name, expected, shouldPass, inputValue = "0.2"] of controls) {
+  const controlPath = resolve(".generated/oracle-control.json");
+  writeFileSync(controlPath, JSON.stringify({evaluation_interval: "1s", tests: [{
+    interval: "1s", input_series: [{series: 'm{job="$literal"}', values: inputValue}],
+    promql_expr_test: assertions("m", 0, expected, [{labels: {job: "$literal"}}]),
+  }]}));
+  const run = spawnSync(process.env.PROMTOOL || "promtool", ["test", "rules", controlPath], {encoding: "utf8"});
+  const report = (run.stdout || "") + (run.stderr || "");
+  if (shouldPass ? run.status !== 0 : run.status !== 1 || !report.includes("exp:") || !report.includes("got:"))
+    throw new Error(`Oracle control '${name}' did not ${shouldPass ? "accept" : "reject"} the result: ${report || run.error}`);
+}
+console.log(`Oracle controls: ${controls.length} acceptance/rejection checks passed.`);

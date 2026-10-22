@@ -49,6 +49,8 @@ JavaScript SDK and does not add an execution engine to the Python package.
 - The playground shares a structured plan between the Rust builder, Python code
   renderer and a bounded docs-only float simulator. Tests compare snippets with
   the native Python SDK and the simulator with pinned Prometheus `promtool`.
+  Result labels and cardinality must match exactly; finite values use a tolerance
+  of `1e-12 * max(1, abs(expected))` to allow floating-point aggregation order.
   Unsupported evaluation semantics are listed in the UI; arbitrary text is not executed.
 - Layouts, components and styles live in `src/`. Fonts are bundled locally.
 - `.astro/`, `.generated/`, `dist/` and `node_modules/` are generated and ignored.

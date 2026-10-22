@@ -9,6 +9,10 @@ on:
       - 'benchmarks/README.md'
       - 'CONTRIBUTING.md'
       - 'python/metricraft/src/**'
+      - 'crates/metricraft-core/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/actions/documentation-tools/**'
       - '.github/workflows/documentation.yml'
   workflow_dispatch:
 
@@ -23,7 +27,7 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
     defaults:
@@ -41,9 +45,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: ./.github/actions/documentation-tools
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - run: python scripts/check-native.py
       - uses: actions/upload-pages-artifact@v4
         with:
           path: website/dist

@@ -8,11 +8,13 @@
   },
   "scripts": {
     "generate": "python scripts/generate-api.py",
-    "predev": "npm run generate",
+    "wasm": "python scripts/build-wasm.py",
+    "test": "node --test tests/*.test.mjs",
+    "predev": "npm run generate && npm run wasm",
     "dev": "astro dev",
     "precheck": "npm run generate",
     "check": "prettier --check src astro.config.mjs scripts/remark-docs.mjs package.json && astro check",
-    "prebuild": "npm run generate",
+    "prebuild": "npm run generate && npm run wasm && npm test",
     "build": "astro build && pagefind --site dist && python scripts/check-site.py",
     "preview": "astro preview --host 127.0.0.1"
   },

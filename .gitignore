@@ -200,3 +200,4 @@ Thumbs.db
 node_modules/
 website/.astro/
 website/.generated/
+website/public/playground-wasm/

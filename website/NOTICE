@@ -1,0 +1,9 @@
+MetriCraft documentation playground
+Copyright 2025-present NagareWorks
+
+The float counter extrapolation in src/playground/evaluate.ts follows the
+algorithm in Prometheus promql/functions.go, Copyright The Prometheus Authors,
+licensed under the Apache License, Version 2.0.
+https://github.com/prometheus/prometheus/blob/v3.15.0/promql/functions.go
+
+The repository's LICENSE contains the Apache License, Version 2.0.

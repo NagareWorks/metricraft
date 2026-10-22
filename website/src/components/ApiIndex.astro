@@ -1,47 +1,62 @@
 ---
 import api from "../../.generated/api.json";
 import { repository } from "../data/navigation.mjs";
+interface Props {
+  category: string;
+}
+const { category } = Astro.props;
+const classes = api
+  .map((cls) => ({
+    ...cls,
+    methods: cls.methods.filter((method) => method.category === category),
+  }))
+  .filter((cls) => cls.methods.length);
+const signature = (
+  cls: string,
+  method: { name: string; signature: string; badges: string[] },
+) => {
+  if (method.badges.includes("property")) return `${cls}.${method.name}`;
+  return `${cls}.${method.signature}`
+    .replace(`${cls}.__init__`, cls)
+    .replace(`${cls}.${cls}`, cls);
+};
 ---
 
-<section class="api-index" aria-labelledby="signature-index">
-  <h2 id="signature-index">Signature index</h2>
-  <p>
-    Expand an entry for its signature, source documentation and declaration.
-    Methods are grouped by their implementation module.
-  </p>
+<section id="api-methods" class="api-reference">
+  <h2>Methods and parameters</h2>
   <div class="api-filter">
-    <label for="api-filter">Filter API entries</label><input
+    <label for="api-filter">Find on this page</label><input
       id="api-filter"
       type="search"
-      placeholder="e.g. rate, query_async, vm_only"
-      autocomplete="off"
+      placeholder="Method or parameter name…"
     /><p id="api-status" role="status"></p>
   </div>
-  <div class="api-jumps">
-    {
-      api.map((cls) => (
-        <a href={`#api-${cls.name.toLowerCase()}`}>{cls.name}</a>
-      ))
-    }
-  </div>
   {
-    api.map((cls) => (
-      <section class="api-class" data-api-class>
-        <h2 id={`api-${cls.name.toLowerCase()}`}>{cls.name}</h2>
+    classes.map((cls) => (
+      <section data-api-class id={`api-${cls.name.toLowerCase()}`}>
+        <h3>{cls.name}</h3>
         {cls.methods.map((method) => (
           <details
             class="api-method"
-            id={`api-${cls.name.toLowerCase()}-${method.name}`}
+            id={method.id}
             data-api-entry
-            data-filter={`${cls.name} ${method.name} ${method.group} ${method.badges.join(" ")}`.toLowerCase()}
+            data-filter={`${cls.name} ${method.name} ${method.purpose} ${method.parameters.map((p) => p.name).join(" ")} ${method.badges.join(" ")}`.toLowerCase()}
           >
             <summary>
-              <code>
-                {method.name === "__init__"
-                  ? `${cls.name}(…)`
-                  : `${method.name}${method.badges.includes("property") ? "" : "(…)"}`}
-              </code>
-              <span class="api-group">{method.group}</span>
+              <span>
+                <code>
+                  {method.name === "__init__" ? cls.name : method.name}
+                  {method.badges.some((badge: string) => badge === "property")
+                    ? ""
+                    : "()"}
+                </code>
+                <span class="api-summary-purpose">{method.purpose}</span>
+              </span>
+              <span class="api-group">
+                {"vm_only" === method.badges.find((b) => b === "vm_only")
+                  ? "MetricsQL"
+                  : ""}
+              </span>
             </summary>
             <div class="api-detail">
               <div class="api-badges">
@@ -49,23 +64,64 @@ import { repository } from "../data/navigation.mjs";
                   <span>{badge.replaceAll("_", " ")}</span>
                 ))}
               </div>
-              <pre>
-                <code>
-                  {`${cls.name}.${method.signature}`
-                    .replace(`${cls.name}.__init__`, cls.name)
-                    .replace(`${cls.name}.${cls.name}`, cls.name)}
-                </code>
-              </pre>
-              {method.doc && <p class="api-docstring">{method.doc}</p>}
+              <pre
+                class="api-signature"
+                data-copy-plain
+                set:text={signature(cls.name, method)}
+              />
+              {method.notes && <p class="api-note">{method.notes}</p>}
+              {method.parameters.length ? (
+                <div class="api-parameters">
+                  <table>
+                    <caption>Parameters</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Parameter / type</th>
+                        <th scope="col">Meaning and accepted values</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {method.parameters.map((p) => (
+                        <tr>
+                          <th scope="row">
+                            <code>{p.display}</code>
+                            <span class="api-type">{p.type}</span>
+                            <span class="api-default">
+                              {p.default !== null
+                                ? `Default: ${p.default}`
+                                : p.display.startsWith("*")
+                                  ? "Variadic"
+                                  : "Required"}
+                            </span>
+                          </th>
+                          <td>{p.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p class="api-no-params">No parameters.</p>
+              )}
+              <p class="api-return">
+                <strong>Returns</strong> {method.returns}
+              </p>
+              {method.example && (
+                <div class="api-example">
+                  <h4>Example</h4>
+                  <pre
+                    data-copy-plain
+                    set:text={`from metricraft import QueryBuilder as Q\n\n${method.example}`}
+                  />
+                </div>
+              )}
               <div class="api-links">
                 <a
                   href={`${repository}/blob/main/${method.source}#L${method.line}`}
                 >
                   View declaration ↗
                 </a>
-                <a href={`#api-${cls.name.toLowerCase()}-${method.name}`}>
-                  Link to this entry
-                </a>
+                <a href={`#${method.id}`}>Link to this method</a>
               </div>
             </div>
           </details>

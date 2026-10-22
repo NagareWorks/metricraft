@@ -12,16 +12,42 @@ const { current } = Astro.props;
       <div class="nav-group">
         <p>{group.title}</p>
         <ul>
-          {group.pages.map((page) => (
-            <li>
-              <a
-                href={href(page.slug)}
-                aria-current={current === page.slug ? "page" : undefined}
-              >
-                {page.title}
-              </a>
-            </li>
-          ))}
+          {group.pages
+            .filter((page) => !("apiCategory" in page))
+            .map((page) => (
+              <li>
+                <a
+                  href={href(page.slug)}
+                  aria-current={current === page.slug ? "page" : undefined}
+                >
+                  {page.title}
+                </a>
+                {page.slug === "reference/api" && (
+                  <details
+                    class="api-nav"
+                    open={current?.startsWith("reference/api/")}
+                  >
+                    <summary>API categories</summary>
+                    <ul>
+                      {group.pages
+                        .filter((p) => "apiCategory" in p)
+                        .map((p) => (
+                          <li>
+                            <a
+                              href={href(p.slug)}
+                              aria-current={
+                                current === p.slug ? "page" : undefined
+                              }
+                            >
+                              {p.title}
+                            </a>
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                )}
+              </li>
+            ))}
         </ul>
       </div>
     ))

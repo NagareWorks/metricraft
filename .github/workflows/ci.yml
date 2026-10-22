@@ -124,7 +124,7 @@ jobs:
 
   documentation:
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
     defaults:
@@ -142,9 +142,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: ./.github/actions/documentation-tools
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - run: python scripts/check-native.py
       - uses: actions/upload-artifact@v4
         with:
           name: metricraft-documentation

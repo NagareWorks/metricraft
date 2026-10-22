@@ -1,0 +1,67 @@
+---
+import api from "../../.generated/api.json";
+import categories from "../data/api-categories.json";
+import { href } from "../data/navigation.mjs";
+---
+
+<section id="signature-index">
+  <h2>Choose an API category</h2>
+  <div class="api-category-grid">
+    {
+      categories.map((category) => (
+        <a href={href(`reference/api/${category.id}`)}>
+          <>
+            <strong>
+              {category.title} <span>↗</span>
+            </strong>
+            <p>{category.description}</p>
+            <small>
+              {
+                api
+                  .flatMap((cls) => cls.methods)
+                  .filter((m) => m.category === category.id).length
+              }{" "}
+              methods
+            </small>
+          </>
+        </a>
+      ))
+    }
+  </div>
+  <details class="api-directory">
+    <summary>Find a method across all categories</summary>
+    <div class="api-filter">
+      <label for="api-filter">Method name</label><input
+        type="search"
+        id="api-filter"
+        placeholder="For example: count_gt_over_time"
+      /><p id="api-status" role="status"></p>
+    </div>
+    {
+      api.map((cls) => (
+        <section data-api-class>
+          <>
+            <h3 id={`api-${cls.name.toLowerCase()}`}>{cls.name}</h3>
+            <ul class="api-directory-links">
+              {cls.methods.map((method) => (
+                <li
+                  data-api-entry
+                  data-filter={`${cls.name} ${method.name} ${method.category}`.toLowerCase()}
+                >
+                  <a
+                    id={method.id}
+                    data-api-redirect
+                    href={`${href(`reference/api/${method.category}`)}#${method.id}`}
+                  >
+                    <code>{method.name}</code>
+                    <span>{method.category}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        </section>
+      ))
+    }
+  </details>
+</section>

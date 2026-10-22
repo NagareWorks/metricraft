@@ -1,0 +1,72 @@
+[
+  {
+    "id": "construction",
+    "title": "Factories & building",
+    "description": "Start a typed expression and render it with explicit dialect and resource limits."
+  },
+  {
+    "id": "selectors",
+    "title": "Selectors & filters",
+    "description": "Choose metrics and attach literal label constraints."
+  },
+  {
+    "id": "aggregation",
+    "title": "Aggregation & grouping",
+    "description": "Reduce across series and choose one grouping strategy."
+  },
+  {
+    "id": "operators",
+    "title": "Operators & matching",
+    "description": "Compose arithmetic, comparisons and vector matching."
+  },
+  {
+    "id": "time",
+    "title": "Time & subqueries",
+    "description": "Set windows, evaluation time, offsets and subquery resolution."
+  },
+  {
+    "id": "rollups",
+    "title": "Rates & window statistics",
+    "description": "Compute rates and summaries over each series' lookbehind window."
+  },
+  {
+    "id": "metricsql-rollups",
+    "title": "MetricsQL rollups",
+    "description": "Use VictoriaMetrics-specific sample statistics and rollup variants."
+  },
+  {
+    "id": "functions",
+    "title": "Math, sorting & histograms",
+    "description": "Transform values, extract calendar fields and estimate histogram statistics."
+  },
+  {
+    "id": "labels",
+    "title": "Label operations",
+    "description": "Transform output labels without modifying source expressions."
+  },
+  {
+    "id": "transforms",
+    "title": "MetricsQL transforms",
+    "description": "Shape complete query intervals, fill gaps and work with histogram buckets."
+  },
+  {
+    "id": "templates",
+    "title": "MetricsQL templates",
+    "description": "Define scoped immutable values and reusable expression templates."
+  },
+  {
+    "id": "diagnostics",
+    "title": "Validation & diagnostics",
+    "description": "Inspect shared graph structure and bounded rendered source spans."
+  },
+  {
+    "id": "client",
+    "title": "Client & requests",
+    "description": "Execute saved queries, read metadata and manage sync/async transports."
+  },
+  {
+    "id": "configuration",
+    "title": "Connection configuration",
+    "description": "Choose endpoints, tenant routing, timeouts and transport options."
+  }
+]

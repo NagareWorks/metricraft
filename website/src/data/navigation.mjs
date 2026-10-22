@@ -1,3 +1,4 @@
+import apiCategories from "./api-categories.json";
 export const repository = "https://github.com/NagareWorks/metricraft";
 export const groups = [
   {
@@ -56,6 +57,13 @@ export const groups = [
     title: "Examples",
     pages: [
       {
+        slug: "playground",
+        source: "docs/playground.md",
+        title: "Query playground",
+        description:
+          "Choose monitoring filters, see live Python and PromQL, and query editable sample data.",
+      },
+      {
         slug: "examples/structured-selections",
         source: "docs/examples/01_configurable_query/README.md",
         title: "From UI selections",
@@ -87,6 +95,20 @@ export const groups = [
         title: "Python API",
         description:
           "Find public builder, client and configuration methods with signatures from the source.",
+      },
+      ...apiCategories.map((category) => ({
+        slug: `reference/api/${category.id}`,
+        source: `docs/reference/${category.id}.md`,
+        title: category.title,
+        description: category.description,
+        apiCategory: category.id,
+      })),
+      {
+        slug: "reference/models",
+        source: "docs/models.md",
+        title: "Models & shared types",
+        description:
+          "Result fields, ingestion data, time values, registry helpers and errors.",
       },
       {
         slug: "reference/migration",

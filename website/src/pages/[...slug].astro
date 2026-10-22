@@ -3,6 +3,8 @@ import { getEntry, render } from "astro:content";
 import Shell from "../layouts/Shell.astro";
 import Navigation from "../components/Navigation.astro";
 import ApiIndex from "../components/ApiIndex.astro";
+import ApiDirectory from "../components/ApiDirectory.astro";
+import Playground from "../components/Playground.astro";
 import { pages, href, repository } from "../data/navigation.mjs";
 export function getStaticPaths() {
   return pages.map((page, index) => ({
@@ -15,8 +17,8 @@ const entry = await getEntry("docs", page.source.replace(/\.md$/, ""));
 if (!entry) throw new Error(`Missing documentation: ${page.source}`);
 const { Content, headings } = await render(entry);
 const toc = headings.filter((heading) => heading.depth === 2);
-if (page.slug === "reference/api")
-  toc.push({ depth: 2, slug: "signature-index", text: "Signature index" });
+if ("apiCategory" in page)
+  toc.push({ depth: 2, slug: "api-methods", text: "Methods and parameters" });
 const previous = pages[index - 1],
   next = pages[index + 1];
 ---
@@ -32,15 +34,15 @@ const previous = pages[index - 1],
       <div class="eyebrow">{page.group}</div>
       <h1 data-pagefind-meta="title">{page.title}</h1>
       <p class="doc-intro">{page.description}</p>
-      {
-        page.slug === "reference/api" && (
-          <p class="api-shortcut" data-pagefind-ignore>
-            <a href="#signature-index">Browse the signature index ↓</a>
-          </p>
-        )
-      }
       <div class="prose">
-        <Content />{page.slug === "reference/api" && <ApiIndex />}
+        <Content />
+        {page.slug === "reference/api" && <ApiDirectory />}
+        {
+          "apiCategory" in page && (
+            <ApiIndex category={page.apiCategory as string} />
+          )
+        }
+        {page.slug === "playground" && <Playground />}
       </div>
       <div class="source-link" data-pagefind-ignore>
         <a href={`${repository}/blob/main/${page.source}`}

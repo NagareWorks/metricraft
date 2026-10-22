@@ -166,34 +166,38 @@ results.addEventListener("keydown", (event) => {
   }
 });
 
-document.querySelectorAll<HTMLPreElement>("pre").forEach((pre) => {
-  const code = pre.querySelector("code");
-  if (!code) return;
-  const wrapper = document.createElement("div");
-  wrapper.className = "code-block";
-  pre.replaceWith(wrapper);
-  wrapper.append(pre);
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "copy-code";
-  button.textContent = "Copy";
-  button.setAttribute("aria-label", "Copy code");
-  button.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(code.textContent || "");
-      button.textContent = "Copied";
-    } catch {
-      button.textContent = "Select to copy";
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(code);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-    }
-    setTimeout(() => (button.textContent = "Copy"), 1800);
+document
+  .querySelectorAll<HTMLPreElement>("pre:not([data-no-copy])")
+  .forEach((pre) => {
+    const code =
+      pre.querySelector("code") ||
+      (pre.hasAttribute("data-copy-plain") ? pre : null);
+    if (!code) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    pre.replaceWith(wrapper);
+    wrapper.append(pre);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-code";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code");
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(code.textContent || "");
+        button.textContent = "Copied";
+      } catch {
+        button.textContent = "Select to copy";
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+      setTimeout(() => (button.textContent = "Copy"), 1800);
+    });
+    wrapper.append(button);
   });
-  wrapper.append(button);
-});
 
 const apiFilter = document.querySelector<HTMLInputElement>("#api-filter");
 function filterApi() {
@@ -225,6 +229,13 @@ function revealAnchor() {
     return;
   }
   const target = document.getElementById(id);
+  if (
+    target instanceof HTMLAnchorElement &&
+    target.hasAttribute("data-api-redirect")
+  ) {
+    location.replace(target.href);
+    return;
+  }
   if (target?.closest("[data-api-class]") && apiFilter) {
     apiFilter.value = "";
     filterApi();

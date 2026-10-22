@@ -126,7 +126,7 @@
   font-size: 0.88em;
   overflow-wrap: anywhere;
 }
-.prose pre {
+.prose pre:not(.lab-code) {
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--surface) !important;
@@ -350,7 +350,148 @@
   overflow-wrap: anywhere;
   font-size: 11px;
   margin: 13px 0;
-  padding: 17px;
+  padding: 15px 18px;
+  text-align: left;
+}
+.api-reference .api-signature code {
+  white-space: pre-wrap;
+}
+.api-summary-purpose {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 6px;
+  font-family: Manrope, sans-serif;
+}
+.api-method summary {
+  padding: 18px 0;
+  align-items: flex-start;
+}
+.api-method summary > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+}
+.prose .api-method summary code {
+  font-size: 13px;
+}
+.api-detail {
+  padding: 0 0 25px 19px;
+}
+.api-parameters {
+  overflow-x: auto;
+  margin: 18px 0;
+}
+.prose .api-parameters table {
+  display: table;
+  width: 100%;
+  font-size: 12px;
+  margin: 0;
+}
+.api-parameters caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 9px;
+}
+.api-parameters th[scope="row"] {
+  width: 32%;
+  font-weight: 400;
+  vertical-align: top;
+}
+.api-type,
+.api-default {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  margin-top: 6px;
+}
+.api-type {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--accent);
+}
+.prose .api-return,
+.prose .api-note,
+.prose .api-no-params {
+  font-size: 12px;
+}
+.api-return strong {
+  display: block;
+  margin-bottom: 5px;
+}
+.api-example h4 {
+  font-size: 12px;
+  margin: 20px 0 8px;
+}
+.api-note {
+  padding: 12px 15px;
+  border-left: 2px solid var(--accent);
+  background: var(--soft);
+}
+.api-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+.prose .api-category-grid > a {
+  text-decoration: none;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.api-category-grid strong {
+  font-size: 13px;
+  display: block;
+}
+.api-category-grid strong span {
+  float: right;
+}
+.prose .api-category-grid p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.api-category-grid small {
+  font-size: 10px;
+  color: var(--accent);
+}
+.api-directory > summary {
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 25px;
+}
+.prose .api-directory-links {
+  list-style: none;
+  padding: 0;
+}
+.api-directory-links a {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.api-directory-links span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.api-nav summary {
+  font-size: 11px;
+  cursor: pointer;
+  padding: 6px 10px;
+  color: var(--muted);
+}
+.api-nav ul {
+  border-left: 1px solid var(--line);
+  margin-left: 12px;
+}
+@media (max-width: 520px) {
+  .api-category-grid {
+    grid-template-columns: 1fr;
+  }
+  .api-detail {
+    padding-left: 0;
+  }
 }
 .api-badges {
   display: flex;

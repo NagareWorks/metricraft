@@ -1,0 +1,23 @@
+name: Documentation toolchain
+description: Pinned browser builder and Prometheus conformance tools
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+        components: rustfmt, clippy
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          . -> target
+          website/wasm -> target
+    - name: Install pinned WebAssembly bindings
+      shell: bash
+      run: cargo install wasm-bindgen-cli --version 0.2.122 --locked
+    - name: Install pinned Prometheus query oracle
+      shell: bash
+      run: |
+        curl -fLsS https://github.com/prometheus/prometheus/releases/download/v3.15.0/prometheus-3.15.0.linux-amd64.tar.gz -o "$RUNNER_TEMP/prometheus-docs.tar.gz"
+        tar -xzf "$RUNNER_TEMP/prometheus-docs.tar.gz" -C "$RUNNER_TEMP" prometheus-3.15.0.linux-amd64/promtool
+        echo "$RUNNER_TEMP/prometheus-3.15.0.linux-amd64" >> "$GITHUB_PATH"

@@ -35,12 +35,18 @@ const output = 'sum by (job) (rate(http_requests_total{job="api"}[5m]))';
           string. Query your backend. Keep the choices yours.
         </p>
         <div class="hero-ctas">
-          <a class="button primary" href={href("getting-started")}
-            >Build your first query <span aria-hidden="true">↗</span></a
-          ><a class="text-link" href={href("reference/api")}
-            >Explore the API <span aria-hidden="true">→</span></a
+          <a
+            class="button primary"
+            href={href("playground")}
+            aria-describedby="playground-intro"
+            >Try the playground <span aria-hidden="true">↗</span></a
+          ><a class="text-link" href={href("getting-started")}
+            >Getting started <span aria-hidden="true">→</span></a
           >
         </div>
+        <p class="hero-playground-intro" id="playground-intro">
+          Choose filters. See the Python and PromQL. Try sample data.
+        </p>
         <div class="hero-facts">
           <span>Python 3.8+</span><span>Rust core</span><span>Apache 2.0</span>
         </div>

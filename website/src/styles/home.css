@@ -50,6 +50,12 @@
   margin-top: 29px;
   flex-wrap: wrap;
 }
+.hero-playground-intro {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+}
 .button {
   display: inline-flex;
   align-items: center;

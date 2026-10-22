@@ -94,6 +94,15 @@ to verify the installed SDK without source imports or native code. This also
 checks that historical fixtures and provider entry points are not shipped.
 Use `--require-bundled-native` to additionally verify the packaged Rust builder.
 
+## Documentation website
+
+English Markdown in `docs/` is shared with the custom Astro site in `website/`.
+Use Node.js 24+ and Python 3.11+ to run `npm ci`, `npm run check` and
+`npm run build` from `website/`. The build generates API signatures from source,
+indexes local search and checks links, fragments and assets. CI includes these
+checks in `required-checks`. See [the website guide](website/README.md) for
+preview and contribution instructions.
+
 ## GitHub Actions
 
 CI runs automatically for maintainers with write access and contributors who have

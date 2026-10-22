@@ -1,0 +1,76 @@
+---
+import api from "../../.generated/api.json";
+import { repository } from "../data/navigation.mjs";
+---
+
+<section class="api-index" aria-labelledby="signature-index">
+  <h2 id="signature-index">Signature index</h2>
+  <p>
+    Expand an entry for its signature, source documentation and declaration.
+    Methods are grouped by their implementation module.
+  </p>
+  <div class="api-filter">
+    <label for="api-filter">Filter API entries</label><input
+      id="api-filter"
+      type="search"
+      placeholder="e.g. rate, query_async, vm_only"
+      autocomplete="off"
+    /><p id="api-status" role="status"></p>
+  </div>
+  <div class="api-jumps">
+    {
+      api.map((cls) => (
+        <a href={`#api-${cls.name.toLowerCase()}`}>{cls.name}</a>
+      ))
+    }
+  </div>
+  {
+    api.map((cls) => (
+      <section class="api-class" data-api-class>
+        <h2 id={`api-${cls.name.toLowerCase()}`}>{cls.name}</h2>
+        {cls.methods.map((method) => (
+          <details
+            class="api-method"
+            id={`api-${cls.name.toLowerCase()}-${method.name}`}
+            data-api-entry
+            data-filter={`${cls.name} ${method.name} ${method.group} ${method.badges.join(" ")}`.toLowerCase()}
+          >
+            <summary>
+              <code>
+                {method.name === "__init__"
+                  ? `${cls.name}(…)`
+                  : `${method.name}${method.badges.includes("property") ? "" : "(…)"}`}
+              </code>
+              <span class="api-group">{method.group}</span>
+            </summary>
+            <div class="api-detail">
+              <div class="api-badges">
+                {method.badges.map((badge) => (
+                  <span>{badge.replaceAll("_", " ")}</span>
+                ))}
+              </div>
+              <pre>
+                <code>
+                  {`${cls.name}.${method.signature}`
+                    .replace(`${cls.name}.__init__`, cls.name)
+                    .replace(`${cls.name}.${cls.name}`, cls.name)}
+                </code>
+              </pre>
+              {method.doc && <p class="api-docstring">{method.doc}</p>}
+              <div class="api-links">
+                <a
+                  href={`${repository}/blob/main/${method.source}#L${method.line}`}
+                >
+                  View declaration ↗
+                </a>
+                <a href={`#api-${cls.name.toLowerCase()}-${method.name}`}>
+                  Link to this entry
+                </a>
+              </div>
+            </div>
+          </details>
+        ))}
+      </section>
+    ))
+  }
+</section>

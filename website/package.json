@@ -1,0 +1,32 @@
+{
+  "name": "@metricraft/documentation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "generate": "python scripts/generate-api.py",
+    "predev": "npm run generate",
+    "dev": "astro dev",
+    "precheck": "npm run generate",
+    "check": "prettier --check src astro.config.mjs scripts/remark-docs.mjs package.json && astro check",
+    "prebuild": "npm run generate",
+    "build": "astro build && pagefind --site dist && python scripts/check-site.py",
+    "preview": "astro preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.4",
+    "@fontsource/ibm-plex-mono": "^5.2.0",
+    "@fontsource/manrope": "^5.2.0",
+    "astro": "7.4.2",
+    "pagefind": "1.5.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "prettier": "3.6.2",
+    "prettier-plugin-astro": "0.14.1",
+    "typescript": "5.9.3"
+  }
+}

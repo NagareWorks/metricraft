@@ -10,7 +10,6 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "python/metricraft/src"))
 from metricraft import QueryBuilder
-from metricraft._legacy.builder import MetricsBuilder
 
 
 def selector(builder, metric):
@@ -72,13 +71,10 @@ def main():
     report = {"note": "Synthetic workloads; GC and validation enabled. Times are per workload, not per query. No HTTP.",
               "iterations": args.iterations, "rounds": args.rounds, "workloads": {}}
     for name in ("error_ratio", "latency_quantile", "dashboard_fanout"):
-        report["workloads"][name] = {
-            label: measure(builder, name, args.iterations, args.rounds)
-            for label, builder in (("legacy_python", MetricsBuilder), ("rust_via_ctypes", QueryBuilder))
-        }
+        report["workloads"][name] = measure(QueryBuilder, name, args.iterations, args.rounds)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print("Completed synthetic workload comparison:", args.output)
+    print("Completed synthetic SDK workloads:", args.output)
 
 
 if __name__ == "__main__":

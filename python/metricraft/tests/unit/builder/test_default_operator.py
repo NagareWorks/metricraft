@@ -58,14 +58,6 @@ def test_default_returns_the_same_immutable_builder_type():
     assert type(builder) is QueryBuilder
 
 
-def test_default_without_expression_raises():
-    """Test that calling default without base expression raises error."""
-    from metricraft._legacy.builder.impl.base import MetricsBuilder
-
-    with pytest.raises(Exception):
-        MetricsBuilder().default(0)  # type: ignore[attr-defined]
-
-
 def test_default_promql_validation_fails():
     """Test that default operator fails PromQL validation."""
     builder = QueryBuilder.from_metric("cpu_usage").default(0)

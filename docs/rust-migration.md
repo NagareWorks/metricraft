@@ -4,7 +4,7 @@ The public builder is fully backed by the immutable Rust core. The retained
 historical surface is [audited](legacy-api-migration.md); broader language support
 now targets [Prometheus 3.15.0 and VictoriaMetrics 1.153.0](language-support.md).
 There is one Python distribution containing the builder and the independent
-sync/async HTTP client. The historical Python AST is an unshipped test fixture.
+sync/async HTTP client. The historical Python AST and its dedicated tests have been removed.
 
 ## Architecture
 
@@ -27,7 +27,7 @@ upstream parser checks, and real-backend integration. The compatibility Action
 also discovers current official capabilities and submits catalog witnesses to
 both pinned backends. Reports are generated artifacts, not library data or unit tests.
 
-The unified benchmark entry point covers pure Rust, ctypes, historical Python,
+The unified benchmark entry point covers pure Rust, the current Python/ctypes facade,
 shared selectors/labels/templates, and concurrent create/build/error/release loops.
 The unavailable original internal trace is replaced by synthetic application
 workloads; these cannot establish production or HTTP end-to-end performance.
@@ -39,7 +39,8 @@ composition oracle. See [memory measurements](memory.md) and
 ## Release work
 
 The multi-platform native wheel build and installation checks are configured in
-GitHub Actions. They still need to pass for the exact release revision before
-publication. No migrated release has been published from this working tree.
+GitHub Actions and must pass for the exact release revision before publication.
+The first native release candidate is `0.3.0rc1`; see the
+[installation guide](getting-started.md).
 Future upstream versions are separate compatibility updates; main-branch
 capabilities absent from the stable baseline remain explicit in generated reports.

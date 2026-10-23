@@ -43,14 +43,6 @@ def test_endpoint_config_base_init_via_subclass():
     assert cfg.get_connection_info()["url"].startswith("http")
 
 
-def test_metricsbuilder_create_new_builder_none_raises():
-    from metricraft._legacy.builder.impl.base import MetricsBuilder
-
-    mb = MetricsBuilder(ast_node=None)
-    with pytest.raises(ValueError):
-        mb._create_new_builder(None)  # type: ignore[arg-type]
-
-
 @pytest.mark.asyncio
 async def test_vm_client_async_methods_require_async_client():
     reset_config()

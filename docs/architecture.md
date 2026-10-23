@@ -15,7 +15,6 @@ crates/metricraft-ffi/    C ABI, errors and ownership
 python/metricraft/       one Python distribution: builder, client, config and models
   src/metricraft/builder/ public class, stateless operation groups, native owner
   src/metricraft/models/ query results, ingestion payloads, metadata responses
-  src/metricraft/_legacy/ source-only migration fixtures, excluded from packages
 docs/examples/          runnable application integration examples
 ```
 
@@ -170,11 +169,11 @@ Evaluation/storage behavior is explicitly backend-owned; unreleased upstream
 features are reported separately. Reports and source snapshots remain Actions
 artifacts. Passing examples are bounded evidence, not proof of every expression.
 
-Historical Python builders and visitors are isolated under `metricraft/_legacy`.
-They remain available from a source checkout for regression tests and benchmarks
-and are excluded from distribution packages. All public QueryBuilder imports
-point to the immutable class. The mutable Rust ABI, placeholder Rust VM crate and
-Python provider registry are removed.
+The Python AST, builders and visitors have been removed. Regression tests and
+benchmarks use the current immutable builder. A frozen method-name inventory
+preserves migration coverage without carrying an executable old implementation.
+The mutable Rust ABI, placeholder Rust VM crate and Python provider registry
+are also removed.
 
 ## Client and packaging
 
@@ -221,22 +220,21 @@ response parsing; those relationships have actual multiple implementations.
 ## Performance and next work
 
 Public query validation raises `TypeError` or `ValueError`; native loading failures
-raise `RuntimeError`. Historical Python AST exception types are private fixtures.
+raise `RuntimeError`. Historical Python AST exception types have been removed.
 The public exception package contains `MetriCraftError` and its HTTP subclasses
 `MCHTTPError`, `TimeoutError` and `ConnectionError`. Plugin-loader and registry error
 classes are retired with provider discovery; the public enum package contains `DBType`.
 
 Application profiling identified Python AST overhead as the reason for migration.
 The new structure avoids Python AST traversal and full-tree cloning during
-composition. [Local microbenchmarks](../benchmarks/README.md) compare construction,
-rendering, release and reuse with the historical Python implementation. The unified
+composition. [Local microbenchmarks](../benchmarks/README.md) measure construction,
+rendering, release and reuse in the current Python facade and pure Rust. The unified
 suite also measures synthetic configurable-monitoring workloads and concurrent
 memory behavior. These substitute for the unavailable original trace, and do not
 establish production application or HTTP latency.
 
 The [migration checklist](rust-migration.md) records the migrated behavior and
-release gates. Historical Python fixtures remain source-only regression and
-benchmark references; they are excluded from installed packages. HTTP transport
+release gates. Historical implementations are available only in Git history. HTTP transport
 stays in Python. See [language support](language-support.md) for the current baseline.
 
 ## Migration compatibility
@@ -253,12 +251,12 @@ The `metricraft_vm` namespace and provider registration/discovery APIs are
 retired, including `get_builder_for`, `get_client_for`, `DatabaseClient(db_type=...)`
 and `DatabaseClient.get_instance(...)`. Replace them with direct construction or
 `DatabaseClient(instance=...)`. Public Python AST visitor hooks and family ABCs
-are now private migration fixtures. Unsupported native methods fail explicitly.
+have been removed. Unsupported native methods fail explicitly.
 
 The native library is bundled under `metricraft/native/` by GitHub Actions.
 The C ABI uses no CPython extension API, so wheels are tagged `py3-none-<platform>`.
 The release gate checks source identity, wheel integrity and installed behavior.
-The sdist remains Python-only; local Rust builds use the monorepo checkout.
+The sdist includes the Python SDK, Rust sources and Cargo lockfile for standalone builds.
 See [the workflow guide](../CONTRIBUTING.md#github-actions) for targets and triggers.
 
 MetricsQL extension syntax follows the

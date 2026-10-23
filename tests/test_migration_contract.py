@@ -3,7 +3,6 @@ import copy
 from datetime import datetime, timezone
 import json
 import operator
-import ast
 import importlib.util
 from pathlib import Path
 
@@ -17,17 +16,9 @@ def test_every_historical_public_method_has_an_explicit_disposition():
     spec = importlib.util.spec_from_file_location("migration_witnesses", root / "tests/conformance/migration.py")
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
-    old_names = set()
-    for path in (root / "python/metricraft/src/metricraft/_legacy/builder").rglob("*.py"):
-        if path.parent.name not in ("impl", "mixins"):
-            continue
-        for cls in ast.walk(ast.parse(path.read_text(encoding="utf-8-sig"))):
-            if isinstance(cls, ast.ClassDef):
-                for node in cls.body:
-                    if isinstance(node, ast.FunctionDef) and (
-                        not node.name.startswith("_") or node.name.startswith("__") and node.name != "__init__"
-                    ):
-                        old_names.add(node.name)
+    inventory = json.loads((root / "tests/conformance/builder_api.json").read_text(encoding="utf-8"))
+    old_names = set(inventory["methods"])
+    assert len(old_names) == len(inventory["methods"]) == 173
     expressions = migration.expression_cases()
     assert old_names == set(expressions) | migration.DIAGNOSTICS | set(migration.RETIRED)
     for name, query in expressions.items():

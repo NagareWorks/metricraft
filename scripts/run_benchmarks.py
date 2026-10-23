@@ -46,25 +46,24 @@ def summary(report, output):
         data = json.loads(timings.read_text(encoding="utf-8"))
         lines += ["", "## Synthetic application workloads", "",
                   "Times include construction, rendering and release, per workload iteration.", "",
-                  "| Workload | Queries | Python µs | Rust via ctypes µs | Ratio |",
-                  "| --- | ---: | ---: | ---: | ---: |"]
+                  "| Workload | Queries | Construct µs | Render µs | Release µs | Total µs |",
+                  "| --- | ---: | ---: | ---: | ---: | ---: |"]
         for name, result in data["workloads"].items():
-            old = result["legacy_python"]["phases"]["total"]["median_us"]
-            new = result["rust_via_ctypes"]["phases"]["total"]["median_us"]
-            count = result["rust_via_ctypes"]["queries_per_iteration"]
-            lines.append(f"| {name} | {count} | {old:.2f} | {new:.2f} | {old / new:.2f}x |")
+            timings = [result["phases"][phase]["median_us"]
+                       for phase in ("construct", "render", "release", "total")]
+            cells = " | ".join(f"{value:.2f}" for value in timings)
+            lines.append(f"| {name} | {result['queries_per_iteration']} | {cells} |")
     if {"microbenchmarks", "rust-timings"} <= passed:
         native = json.loads((output / "rust-timings.json").read_text(encoding="utf-8"))
         binding = json.loads((output / "microbenchmarks.json").read_text(encoding="utf-8"))
         lines += ["", "## Matching selector/rate/aggregation shapes", "",
                   "Construction, rendering and release, µs per query. The ctypes column includes the Python facade and ownership costs.", "",
-                  "| Shape | Pure Rust µs | Rust via ctypes µs | Historical Python µs |",
-                  "| --- | ---: | ---: | ---: |"]
+                  "| Shape | Pure Rust µs | Rust via ctypes µs |",
+                  "| --- | ---: | ---: |"]
         for name, timing in native.items():
             row = binding["workloads"][name]
-            ffi = row["rust_via_ctypes"]["construct_render_release"]["median_us"]
-            old = row["legacy_python"]["construct_render_release"]["median_us"]
-            lines.append(f"| {name} | {timing['construct_render_release_us']:.2f} | {ffi:.2f} | {old:.2f} |")
+            ffi = row["construct_render_release"]["median_us"]
+            lines.append(f"| {name} | {timing['construct_render_release_us']:.2f} | {ffi:.2f} |")
     memory = output / "threaded-memory.json"
     if "threaded-memory" in passed:
         data = json.loads(memory.read_text(encoding="utf-8"))
@@ -130,7 +129,7 @@ def main(argv=None):
         report["native_sha256"] = hashlib.sha256(library.read_bytes()).hexdigest()
         run("native-allocation", ["cargo", "run", "--release", "--locked", "-p", "metricraft-core", "--example", "memory_profile"])
         run("rust-timings", ["cargo", "run", "--quiet", "--release", "--locked", "-p", "metricraft-core", "--example", "benchmark_shapes", "--", str(args.iterations), str(args.rounds)], "rust-timings.json")
-        for name, script in (("microbenchmarks", "compare_immutable.py"), ("workloads", "workloads.py")):
+        for name, script in (("microbenchmarks", "python_timings.py"), ("workloads", "workloads.py")):
             run(name, [sys.executable, "benchmarks/" + script, "--iterations", str(args.iterations), "--rounds", str(args.rounds), "--output", str(output / (name + ".json"))])
         run("python-memory", [sys.executable, "benchmarks/python_memory.py", "--output", str(output / "python-memory.json")])
         run("threaded-memory", [sys.executable, "benchmarks/threaded_memory.py", "--seconds", str(args.memory_seconds), "--workers", str(args.workers), "--output", str(output / "threaded-memory.json")])

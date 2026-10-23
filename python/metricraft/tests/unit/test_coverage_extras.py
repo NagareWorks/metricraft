@@ -1,97 +1,9 @@
 import pytest
 from datetime import datetime
 
-from metricraft._legacy.builder.impl.instant_vector import InstantVectorBuilder
-from metricraft._legacy.builder.impl.processed_vector import ProcessedVectorBuilder
-from metricraft._legacy.tree import MetricSelector, NumberLiteral
-from metricraft._legacy.exceptions import VMInvalidExpressionError
-from metricraft._legacy.exceptions import InvalidParameterError
 from metricraft.models import MetricsQueryResult, MetricsInsertData
 
 from metricraft.client.db_client import DatabaseClient
-
-
-def _make_iv(metric: str = "cpu_usage") -> InstantVectorBuilder:
-    return InstantVectorBuilder(MetricSelector(metric))
-
-
-def test_comparison_and_logical_magic_ops():
-    b = _make_iv()
-    # comparison magic methods
-    res_eq = (b == 1)
-    res_ne = (b != 1)
-    assert isinstance(res_eq, ProcessedVectorBuilder)
-    assert isinstance(res_ne, ProcessedVectorBuilder)
-
-    # logical magic methods
-    res_and = (b & b)
-    res_or = (b | b)
-    assert isinstance(res_and, ProcessedVectorBuilder)
-    assert isinstance(res_or, ProcessedVectorBuilder)
-
-
-def test_mathematical_round_with_argument():
-    b = _make_iv()
-    out = b.round(2.0)
-    assert isinstance(out, ProcessedVectorBuilder)
-
-    # default branch
-    out2 = b.round()
-    assert isinstance(out2, ProcessedVectorBuilder)
-
-
-def test_time_range_at_iso_and_ms_timestamp():
-    b = _make_iv()
-    # ISO 8601 string
-    out_iso = b.at("2021-01-01T00:00:00Z")
-    assert out_iso is not None
-
-    # Milliseconds timestamp
-    out_ms = b.at(1609459200000)
-    assert out_ms is not None
-
-    # unsupported type
-    with pytest.raises(TypeError):
-        b.at(object())
-
-
-def test_time_range_offset_basic():
-    b = _make_iv()
-    out = b.offset("5m")
-    assert out is not None
-
-
-def test_instant_vector_metric_preserves_matchers_and_invalid_operator():
-    b = _make_iv().where_eq("job", "api")
-    b2 = b.metric("memory_usage")
-    # ensure label matcher preserved (type-level check by building again)
-    b3 = b2.where_ne("job", "db").metric("disk_io")
-    assert isinstance(b3, InstantVectorBuilder)
-
-    with pytest.raises(ValueError):
-        _make_iv().where("job", "??", "x")
-
-    # between() invalid range
-    with pytest.raises(InvalidParameterError):
-        _make_iv().between(5, 4)
-
-
-def test_vm_invalid_expression_error_position_compat():
-    # legacy position parameter path
-    from metricraft._legacy.ast import Position
-
-    # Use core Position factory; VM error supports legacy 'position' parameter by wrapping it
-    pos = Position.for_text("x", offset=3)
-    err = VMInvalidExpressionError("op", position=pos)
-    # The error should attach a pseudo node with the same position
-    assert getattr(err, "ast_node", None) is not None
-    assert getattr(err.ast_node, "pos", None) == pos
-
-
-def test_instant_vector_constructor_type_error():
-    # Passing wrong AST node type should raise TypeError
-    with pytest.raises(TypeError):
-        InstantVectorBuilder(NumberLiteral(1.0))
 
 
 def test_vm_client_helpers_and_health_fallback(monkeypatch):
@@ -221,40 +133,6 @@ def test_vm_query_result_repr_and_to_dict():
     assert d_err["errorType"] == "bad_data"
 
 
-def test_quantile_over_time_success():
-    b = _make_iv()
-    out = b.quantile_over_time(quantile=0.5, duration="5m")
-    assert isinstance(out, ProcessedVectorBuilder)
-
-
-def test_metricsbuilder_empty_build_and_query_string_error():
-    # Accessing _query_string with no AST should raise ValueError
-    from metricraft._legacy.builder.impl.base import MetricsBuilder
-
-    m = MetricsBuilder(ast_node=None)
-    with pytest.raises(ValueError):
-        _ = m._query_string
-
-    # build(validate=False) should also surface ValueError via cached property
-    with pytest.raises(ValueError):
-        m.build(validate=False)
-
-
-def test_validation_mixin_invalid_standard_and_quantile_bounds():
-    b = _make_iv()
-    with pytest.raises(InvalidParameterError):
-        # invalid standard name
-        b.validate(standard="Foo")
-
-    # invalid quantile range
-    with pytest.raises(InvalidParameterError):
-        b.quantile_over_time(quantile=1.1, duration="5m")
-
-    # zscore_over_time path (smoke)
-    out = b.zscore_over_time("5m")
-    assert isinstance(out, ProcessedVectorBuilder)
-
-
 def test_vm_client_prepare_query_with_builder_stub():
     class Stub:
         def build(self):
@@ -290,10 +168,3 @@ async def test_vm_client_async_methods():
 
     c.async_client = AsyncFail()
     assert await c.health_async() is False
-
-
-def test_between_without_base_expression():
-    from metricraft._legacy.builder.impl.base import MetricsBuilder
-    m = MetricsBuilder(ast_node=None)
-    with pytest.raises(VMInvalidExpressionError):
-        m.between(1, 2)

@@ -1,11 +1,12 @@
 [build-system]
-requires = ["setuptools>=61", "wheel", "setuptools-scm[toml]>=6.2"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "metricraft"
+version = "0.3.0rc1"
 description = "Immutable PromQL/MetricsQL builder and Prometheus/VictoriaMetrics HTTP client"
-readme = "README.md"
+readme = "python/metricraft/README.md"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "NagareWorks"}
@@ -25,7 +26,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = []
-dynamic = ["version"]
+
 
 [project.optional-dependencies]
 dev = [
@@ -63,7 +64,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/NagareWorks/metricraft"
-Documentation = "https://github.com/NagareWorks/metricraft/tree/main/docs"
+Documentation = "https://nagareworks.github.io/metricraft/"
 Repository = "https://github.com/NagareWorks/metricraft"
 "Bug Reports" = "https://github.com/NagareWorks/metricraft/issues"
 Contributing = "https://github.com/NagareWorks/metricraft/blob/main/CONTRIBUTING.md"
@@ -72,12 +73,12 @@ Contributing = "https://github.com/NagareWorks/metricraft/blob/main/CONTRIBUTING
 license-files = ["LICENSE", "NOTICE"]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["python/metricraft/src"]
 include = ["metricraft", "metricraft.*"]
 exclude = ["metricraft._legacy", "metricraft._legacy.*"]
 
 [tool.setuptools.package-dir]
-"" = "src"
+"" = "python/metricraft/src"
 
 [tool.setuptools.exclude-package-data]
 "metricraft" = [
@@ -91,15 +92,9 @@ exclude = ["metricraft._legacy", "metricraft._legacy.*"]
     "*.whl",
 ]
 
-# Use setuptools-scm for versioning; falls back if VCS tags are unavailable
-[tool.setuptools_scm]
-root = "../.."
-fallback_version = "0.3.0"
-local_scheme = "no-local-version"
-
 [tool.pytest.ini_options]
 # Pytest configuration for comprehensive testing
-testpaths = ["tests"]
+testpaths = ["tests", "python/metricraft/tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

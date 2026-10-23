@@ -18,6 +18,7 @@ TOPICS = {
     "prom-basics/extended-range-selectors/smoothed": ["smoothed", "smoothed_instant"],
     "prom-basics/functions": ["rate", "histogram_quantile"],
     "prom-basics/literals": ["nonfinite_nan", "duration_literal", "numeric_suffix", "selector"],
+    "prom-basics/metric-and-label-names": ["selector", "utf8_names", "quoted_group", "quoted_matching"],
     "prom-basics/operators": ["arithmetic", "matching"],
     "prom-basics/time-series-selectors": ["selector", "utf8_names", "rate"],
     "prom-operators/aggregation-operators": ["sum", "count_values", "experimental_limitk", "experimental_limit_ratio"],

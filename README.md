@@ -62,7 +62,7 @@ Install from source with Python 3.8+ and a Rust toolchain:
 ```sh
 git clone https://github.com/NagareWorks/metricraft.git
 cd metricraft
-python -m pip install -e "python/metricraft[dev]"
+python -m pip install -e ".[dev]"
 python scripts/dev.py build
 python scripts/dev.py smoke
 ```

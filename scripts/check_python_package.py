@@ -21,7 +21,7 @@ from metricraft import (DatabaseClient, PrometheusConfig, VMSingleConfig,
                        VMClusterConfig, HttpClientOptions, QueryBuilder)
 import metricraft
 
-assert metadata.version("metricraft")
+assert metricraft.__version__ == metadata.version("metricraft")
 assert not metadata.distribution("metricraft").entry_points
 assert not hasattr(metricraft, "register_provider")
 for retired in ("ProviderLoadError", "RegistryError", "NotConfiguredError", "QueryBuilderError",

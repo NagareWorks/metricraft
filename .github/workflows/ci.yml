@@ -58,10 +58,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-          cache-dependency-path: python/metricraft/pyproject.toml
+          cache-dependency-path: pyproject.toml
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: python -m pip install -e "python/metricraft[dev]"
+      - run: python -m pip install -e ".[dev]"
       - name: Complete Python regression
         run: python scripts/dev.py tests
       - name: Offline examples
@@ -98,7 +98,7 @@ jobs:
           tar -xzf victoria-metrics-linux-amd64-v1.153.0.tar.gz
           sha256sum --check --ignore-missing checksums.txt
           echo "$RUNNER_TEMP/victoria-metrics" >> "$GITHUB_PATH"
-      - run: python -m pip install -e "python/metricraft[dev]"
+      - run: python -m pip install -e ".[dev]"
       - run: python scripts/dev.py conformance
       - name: Check evaluated results through the SDK client
         run: |

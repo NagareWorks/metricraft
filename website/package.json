@@ -23,7 +23,8 @@
     "@fontsource/ibm-plex-mono": "^5.2.0",
     "@fontsource/manrope": "^5.2.0",
     "astro": "7.4.2",
-    "pagefind": "1.5.2"
+    "pagefind": "1.5.2",
+    "re2js": "2.9.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",

@@ -128,7 +128,7 @@
     padding: 20px;
   }
 }
-@media (max-width: 680px) {
+@media (max-width: 760px) {
   .site-header {
     height: 66px;
     padding: 0 20px;

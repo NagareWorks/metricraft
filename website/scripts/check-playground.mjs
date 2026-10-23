@@ -54,6 +54,11 @@ const controls = [
   ["missing series", [], false],
   ["non-finite NaN", [baseline], false, "NaN"],
   ["non-finite infinity", [baseline], false, "+Inf"],
+  ["expected NaN", [{...baseline, value: NaN}], true, "NaN"],
+  ["expected infinity", [{...baseline, value: Infinity}], true, "+Inf"],
+  ["expected negative infinity", [{...baseline, value: -Infinity}], true, "-Inf"],
+  ["wrong infinity sign", [{...baseline, value: Infinity}], false, "-Inf"],
+  ["finite instead of NaN", [{...baseline, value: NaN}], false],
 ];
 for (const [name, expected, shouldPass, inputValue = "0.2"] of controls) {
   const controlPath = resolve(".generated/oracle-control.json");

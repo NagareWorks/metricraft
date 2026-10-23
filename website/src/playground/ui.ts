@@ -7,6 +7,7 @@ import {
 } from "./model.ts";
 import { evaluate } from "./evaluate.ts";
 import { pythonCode } from "./python.ts";
+import { compileMatchers, type LabelPredicate } from "./matchers.ts";
 
 const el = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -34,7 +35,8 @@ function addFilter(label = "", op = "=", value = "") {
   key.maxLength = 256;
   const operator = document.createElement("select");
   operator.setAttribute("aria-label", "Filter operator");
-  for (const text of ["=", "!="]) operator.add(new Option(text, text));
+  for (const text of ["=", "!=", "=~", "!~"])
+    operator.add(new Option(text, text));
   operator.value = op;
   const literal = document.createElement("input");
   literal.value = value;
@@ -42,6 +44,18 @@ function addFilter(label = "", op = "=", value = "") {
   literal.setAttribute("aria-label", "Filter value");
   literal.setAttribute("list", "lab-values");
   literal.maxLength = 256;
+  const describeValue = () => {
+    const regex = operator.value === "=~" || operator.value === "!~";
+    literal.placeholder = regex ? "Regex, e.g. api-.*" : "Value";
+    literal.setAttribute(
+      "aria-label",
+      regex ? "Filter regex pattern" : "Filter value",
+    );
+    if (regex) literal.removeAttribute("list");
+    else literal.setAttribute("list", "lab-values");
+  };
+  operator.addEventListener("change", describeValue);
+  describeValue();
   const remove = document.createElement("button");
   remove.type = "button";
   remove.textContent = "×";
@@ -72,7 +86,8 @@ function plan(): Plan {
       const [label, value] = row.querySelectorAll("input");
       return {
         label: label.value,
-        op: row.querySelector("select")!.value as "=" | "!=",
+        op: row.querySelector("select")!
+          .value as Plan["matchers"][number]["op"],
         value: value.value,
       };
     }),
@@ -89,6 +104,14 @@ function plan(): Plan {
             .map((s) => s.trim())
             .filter(Boolean),
     comparison: field("comparison").value as Plan["comparison"],
+    arithmetic: field("arithmetic").value as Plan["arithmetic"],
+    // JSON serializes -0 as 0; keep the simulator and the WASM input identical.
+    operand: field("operand").disabled
+      ? 100
+      : Number(field("operand").value) || 0,
+    scalarSide: field("scalar-side").disabled
+      ? "right"
+      : (field("scalar-side").value as Plan["scalarSide"]),
     threshold:
       field("comparison").value === "none"
         ? 0
@@ -111,10 +134,23 @@ function update() {
     field("aggregate").value === "none" || field("grouping").value === "none";
   field("window").disabled = field("rollup").value === "none";
   field("threshold").disabled = field("comparison").value === "none";
+  const arithmetic = field("arithmetic").value;
+  field("operand").disabled = ["none", "negate", "positive"].includes(
+    arithmetic,
+  );
+  field("scalar-side").disabled = [
+    "none",
+    "negate",
+    "positive",
+    "%",
+    "**",
+  ].includes(arithmetic);
+  if (field("scalar-side").disabled) field("scalar-side").value = "right";
   el<HTMLButtonElement>("add-filter").disabled = rows.children.length >= 12;
   if (!build) return;
   try {
     const next = plan();
+    compileMatchers(next.matchers);
     const query = build(JSON.stringify(next));
     el("python-output").textContent = pythonCode(next);
     el("promql-output").textContent = query;
@@ -177,7 +213,12 @@ function svgNode(tag: string, attrs: Record<string, string>, text = "") {
   node.textContent = text;
   return node;
 }
-function drawChart(selected: Plan, samples: Series[], end: number) {
+function drawChart(
+  selected: Plan,
+  samples: Series[],
+  end: number,
+  matches: LabelPredicate,
+) {
   const steps = Array.from(
     { length: Math.floor(end / 30) + 1 },
     (_, i) => i * 30,
@@ -185,7 +226,7 @@ function drawChart(selected: Plan, samples: Series[], end: number) {
   if (steps.at(-1) !== end) steps.push(end);
   const series = new Map<string, Map<number, number>>();
   for (const t of steps)
-    for (const sample of evaluate(selected, samples, t)) {
+    for (const sample of evaluate(selected, samples, t, matches)) {
       const key = labelText(sample.labels);
       if (!series.has(key)) series.set(key, new Map());
       series.get(key)!.set(t, sample.value);
@@ -278,20 +319,27 @@ function execute() {
     return;
   }
   const time = Number(timeInput.value);
-  const result = evaluate(currentPlan, data, time);
+  const matches = compileMatchers(currentPlan.matchers);
+  const result = evaluate(currentPlan, data, time, matches);
   el("result-rows").replaceChildren(
     ...result.map((sample) => {
       const row = document.createElement("tr"),
         labels = document.createElement("td"),
         value = document.createElement("td");
       labels.textContent = labelText(sample.labels);
-      value.textContent = Number(sample.value.toPrecision(8)).toString();
+      value.textContent = Number.isFinite(sample.value)
+        ? Number(sample.value.toPrecision(8)).toString()
+        : Number.isNaN(sample.value)
+          ? "NaN"
+          : sample.value > 0
+            ? "+Inf"
+            : "-Inf";
       row.append(labels, value);
       return row;
     }),
   );
   el("result-empty").hidden = result.length !== 0;
-  drawChart(currentPlan, data, time);
+  drawChart(currentPlan, data, time, matches);
   el("result-status").textContent =
     `${result.length} result series at ${time}s · simulated locally`;
   error.textContent = "";
@@ -306,6 +354,12 @@ el("add-filter").addEventListener("click", () => {
   addFilter();
   update();
   rows.lastElementChild?.querySelector("input")?.focus();
+});
+el("try-regex").addEventListener("click", () => {
+  rows.replaceChildren();
+  addFilter("instance", "=~", "api-.*");
+  addFilter("environment", "!~", "staging|development");
+  update();
 });
 dataEditor.addEventListener("input", datasetChanged);
 el("lab-time").addEventListener("input", () => clearResults());

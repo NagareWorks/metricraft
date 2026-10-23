@@ -13,24 +13,31 @@ const { current } = Astro.props;
         <p>{group.title}</p>
         <ul>
           {group.pages
-            .filter((page) => !("apiCategory" in page))
+            .filter((page) => !("parent" in page))
             .map((page) => (
               <li>
-                <a
-                  href={href(page.slug)}
-                  aria-current={current === page.slug ? "page" : undefined}
-                >
-                  {page.title}
-                </a>
-                {page.slug === "reference/api" && (
+                {page.slug === "reference/api" ? (
                   <details
                     class="api-nav"
-                    open={current?.startsWith("reference/api/")}
+                    open={
+                      current?.startsWith("reference/api") ||
+                      current === "reference/models"
+                    }
                   >
-                    <summary>API categories</summary>
+                    <summary>Python API</summary>
                     <ul>
+                      <li>
+                        <a
+                          href={href(page.slug)}
+                          aria-current={
+                            current === page.slug ? "page" : undefined
+                          }
+                        >
+                          Overview
+                        </a>
+                      </li>
                       {group.pages
-                        .filter((p) => "apiCategory" in p)
+                        .filter((p) => "parent" in p && p.parent === page.slug)
                         .map((p) => (
                           <li>
                             <a
@@ -45,6 +52,13 @@ const { current } = Astro.props;
                         ))}
                     </ul>
                   </details>
+                ) : (
+                  <a
+                    href={href(page.slug)}
+                    aria-current={current === page.slug ? "page" : undefined}
+                  >
+                    {page.title}
+                  </a>
                 )}
               </li>
             ))}

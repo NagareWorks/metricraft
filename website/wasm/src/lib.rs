@@ -22,6 +22,10 @@ struct Plan {
     aggregate: String,
     grouping: String,
     labels: Vec<String>,
+    arithmetic: String,
+    operand: f64,
+    #[serde(rename = "scalarSide")]
+    scalar_side: String,
     comparison: String,
     threshold: f64,
 }
@@ -34,13 +38,16 @@ fn construct(input: &str) -> Result<String, String> {
     if plan.matchers.len() > 12 || plan.labels.len() > 12 {
         return Err("Use at most 12 filters and 12 grouping labels".into());
     }
-    if !(1..=3600).contains(&plan.window) || !plan.threshold.is_finite() {
-        return Err("Window must be 1–3600 seconds; threshold must be finite".into());
+    if !(1..=3600).contains(&plan.window)
+        || !plan.threshold.is_finite()
+        || !plan.operand.is_finite()
+    {
+        return Err("Window must be 1–3600 seconds; numeric operands must be finite".into());
     }
     let mut expr = Expr::apply("metric", &plan.metric, "", &[])?;
     for matcher in plan.matchers {
-        if !matches!(matcher.op.as_str(), "=" | "!=") {
-            return Err("The simulator supports exact equality and inequality filters".into());
+        if !matches!(matcher.op.as_str(), "=" | "!=" | "=~" | "!~") {
+            return Err("Unsupported playground label matcher".into());
         }
         expr = Expr::apply(&matcher.op, &matcher.label, &matcher.value, &[expr])?;
     }
@@ -84,6 +91,33 @@ fn construct(input: &str) -> Result<String, String> {
             return Err("Choose by or without before selecting grouping labels".into());
         }
     }
+    if !matches!(plan.scalar_side.as_str(), "left" | "right") {
+        return Err("Choose left or right for the scalar operand".into());
+    }
+    match plan.arithmetic.as_str() {
+        "none" => {}
+        "negate" | "positive" => {
+            expr = Expr::apply(&plan.arithmetic, "", "", &[expr])?;
+        }
+        "+" | "-" | "*" | "/" | "%" | "**" => {
+            if plan.scalar_side == "left" && matches!(plan.arithmetic.as_str(), "%" | "**") {
+                return Err("Python reverse modulo and power are not overloaded; put the expression on the left".into());
+            }
+            let scalar = Expr::apply("number", &plan.operand.to_string(), "", &[])?;
+            let args = if plan.scalar_side == "left" {
+                [scalar, expr]
+            } else {
+                [expr, scalar]
+            };
+            let op = if plan.arithmetic == "**" {
+                "^"
+            } else {
+                &plan.arithmetic
+            };
+            expr = Expr::apply(op, "", "", &args)?;
+        }
+        _ => return Err("Unsupported playground arithmetic".into()),
+    }
     if plan.comparison != "none" {
         if !matches!(
             plan.comparison.as_str(),
@@ -111,7 +145,8 @@ mod tests {
         let input = serde_json::json!({
             "metric": "requests_total", "matchers": [{"label":"job", "op":"=", "value":"api\"} or up #"}],
             "rollup":"rate", "window":300, "aggregate":"sum", "grouping":"by", "labels":["job"],
-            "comparison":">", "threshold":2.0
+            "comparison":">", "threshold":2.0,
+            "arithmetic":"none", "operand":100.0, "scalarSide":"right"
         });
         let query = construct(&input.to_string()).unwrap();
         assert!(query.contains("job=\"api\\\"} or up #\""), "{query}");

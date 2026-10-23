@@ -9,9 +9,15 @@ export function pythonCode(plan: Plan): string {
     "expression = (",
     `    Q.from_metric(${literal(plan.metric)})`,
   ];
+  const matcherMethods = {
+    "=": "where_eq",
+    "!=": "where_ne",
+    "=~": "where_regex",
+    "!~": "where_not_regex",
+  };
   for (const filter of plan.matchers)
     lines.push(
-      `    .${filter.op === "=" ? "where_eq" : "where_ne"}(${literal(filter.label)}, ${literal(filter.value)})`,
+      `    .${matcherMethods[filter.op]}(${literal(filter.label)}, ${literal(filter.value)})`,
     );
   if (plan.rollup !== "none")
     lines.push(`    .${plan.rollup}(${literal(`${plan.window}s`)})`);
@@ -22,17 +28,22 @@ export function pythonCode(plan: Plan): string {
         `    .${plan.grouping}(${plan.labels.map(literal).join(", ")})`,
       );
   }
-  if (plan.comparison !== "none") {
-    const methods = {
-      ">": "gt",
-      ">=": "ge",
-      "<": "lt",
-      "<=": "le",
-      "==": "eq",
-      "!=": "ne",
-    };
-    lines.push(`    .${methods[plan.comparison]}(${plan.threshold})`);
+  lines.push(")");
+  if (plan.arithmetic === "negate" || plan.arithmetic === "positive") {
+    lines.push(
+      `expression = ${plan.arithmetic === "negate" ? "-" : "+"}expression`,
+    );
+  } else if (plan.arithmetic !== "none") {
+    const scalar =
+      plan.operand < 0 ? `(${plan.operand})` : String(plan.operand);
+    const operands =
+      plan.scalarSide === "left"
+        ? [scalar, "expression"]
+        : ["expression", scalar];
+    lines.push(`expression = ${operands[0]} ${plan.arithmetic} ${operands[1]}`);
   }
-  lines.push(")", 'query = expression.build(mode="promql")', "print(query)");
+  if (plan.comparison !== "none")
+    lines.push(`expression = expression ${plan.comparison} ${plan.threshold}`);
+  lines.push('query = expression.build(mode="promql")', "print(query)");
   return lines.join("\n");
 }

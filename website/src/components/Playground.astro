@@ -1,5 +1,6 @@
 ---
 import "../styles/playground.css";
+import { href } from "../data/navigation.mjs";
 ---
 
 <div class="playground" data-pagefind-ignore>
@@ -28,6 +29,13 @@ import "../styles/playground.css";
         >
       </div>
       <div id="filter-rows"></div>
+      <p class="lab-hint">
+        Use <code>=~</code> to match a regex or <code>!~</code> to exclude it. Patterns
+        match the whole label: try <code>api-.*</code> on <code>instance</code>.
+      </p>
+      <button type="button" id="try-regex" class="text-button"
+        >Try regex filters</button
+      >
       <datalist id="lab-labels"></datalist><datalist id="lab-values"></datalist>
       <div class="lab-pair">
         <div>
@@ -81,6 +89,47 @@ import "../styles/playground.css";
           />
         </div>
       </div>
+      <div class="lab-pair">
+        <div>
+          <label for="lab-arithmetic">Arithmetic</label><select
+            id="lab-arithmetic"
+          >
+            <option value="none">Keep values</option>
+            <option value="+">+ Add</option><option value="-">− Subtract</option
+            >
+            <option value="*">× Multiply</option><option value="/"
+              >÷ Divide</option
+            >
+            <option value="%">% Remainder</option><option value="**"
+              >** Power</option
+            >
+            <option value="negate">− Negate</option><option value="positive"
+              >+ Unary plus</option
+            >
+          </select>
+        </div><div>
+          <label for="lab-operand">Scalar value</label><input
+            id="lab-operand"
+            type="number"
+            step="any"
+            value="100"
+            required
+          />
+        </div>
+      </div>
+      <label for="lab-scalar-side">Operand order</label><select
+        id="lab-scalar-side"
+      >
+        <option value="right">Expression first</option><option value="left"
+          >Scalar first</option
+        >
+      </select>
+      <p class="lab-hint">
+        Python operators build a new expression. For example, <code
+          >expression * 100</code
+        > or <code>expression &gt; 5</code>. Python <code>**</code> becomes PromQL
+        <code>^</code>.
+      </p>
       <div class="lab-pair">
         <div>
           <label for="lab-comparison">Value filter</label><select
@@ -204,17 +253,51 @@ import "../styles/playground.css";
     <p id="dataset-status" role="status"></p>
   </section>
   <details class="lab-scope">
+    <summary>Regex and Python operators</summary>
+    <p>
+      Regex patterns match the entire label value: <code>api</code> matches only
+      <code>api</code>, while <code>api.*</code> also matches <code>api-1</code
+      >. Missing labels are matched as empty strings. Lookarounds and
+      backreferences are rejected. The demo uses <a
+        href="https://github.com/le0pard/re2js">RE2JS</a
+      >, with <a
+        href="https://prometheus.io/docs/prometheus/latest/querying/basics/#instant-vector-selectors"
+        >Prometheus matching semantics</a
+      >
+      checked against the pinned backend.
+    </p>
+    <p>
+      Operators construct new expressions; they do not compare Python objects or
+      modify the original query. Use explicit parentheses. Python <code
+        >and</code
+      >,
+      <code>or</code>, chained comparisons and <code>if expression</code> cannot
+      express query logic. For vector sets, use parenthesized <code>&amp;</code>
+      /
+      <code>|</code> or <code>.and_()</code> / <code>.or_()</code>. See <a
+        href={href("reference/api/operators")}>Operators &amp; matching</a
+      >
+      for every supported overload, including vector-to-vector examples.
+    </p>
+    <p>
+      Reverse <code>%</code> and <code>**</code> are not overloaded by the SDK, so
+      those choices keep the scalar on the right. Division by zero and other non-finite
+      results appear in the result table and are omitted from the chart.
+    </p>
+  </details>
+  <details class="lab-scope">
     <summary>What this simulation evaluates</summary><p>
       This page evaluates the structured selections above, not arbitrary PromQL
-      text. It supports exact label matchers, finite float samples, a 5-minute
-      instant lookback with an excluded left boundary (Prometheus 3.15),
-      left-open/right-closed ranges, the listed rollups, counter reset handling
-      and rate extrapolation, aggregations, grouping, and filtering comparisons.
-      Rate/increase model Prometheus behavior. Histograms, stale markers, regex
-      matching, vector joins, MetricsQL-specific evaluation and server storage
-      behavior are outside this simulator. Use a real backend to validate
-      production results. Sample values are limited to ±1e12 and timestamps to
-      millisecond precision to bound this demo.
+      text. It supports exact and RE2 regex label matchers, finite float
+      samples, a 5-minute instant lookback with an excluded left boundary
+      (Prometheus 3.15), left-open/right-closed ranges, the listed rollups,
+      counter reset handling and rate extrapolation, aggregations, grouping,
+      scalar arithmetic, unary signs and filtering comparisons. Rate/increase
+      model Prometheus behavior. Histograms, stale markers, vector joins,
+      MetricsQL-specific evaluation and server storage behavior are outside this
+      simulator. Use a real backend to validate production results. Sample
+      values are limited to ±1e12 and timestamps to millisecond precision to
+      bound this demo.
     </p><p>
       The Python snippet can run with an installed MetriCraft native build. The
       simulator belongs to these docs; it is not a new SDK query engine.

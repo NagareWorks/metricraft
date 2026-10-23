@@ -1,6 +1,6 @@
 export interface Plan {
   metric: string;
-  matchers: { label: string; op: "=" | "!="; value: string }[];
+  matchers: { label: string; op: "=" | "!=" | "=~" | "!~"; value: string }[];
   rollup:
     | "none"
     | "rate"
@@ -13,6 +13,18 @@ export interface Plan {
   aggregate: "none" | "sum" | "avg" | "min" | "max" | "count";
   grouping: "none" | "by" | "without";
   labels: string[];
+  arithmetic:
+    | "none"
+    | "+"
+    | "-"
+    | "*"
+    | "/"
+    | "%"
+    | "**"
+    | "negate"
+    | "positive";
+  operand: number;
+  scalarSide: "right" | "left";
   comparison: "none" | ">" | ">=" | "<" | "<=" | "==" | "!=";
   threshold: number;
 }
@@ -33,6 +45,9 @@ export const initialPlan: Plan = {
   aggregate: "sum",
   grouping: "by",
   labels: ["service"],
+  arithmetic: "none",
+  operand: 100,
+  scalarSide: "right",
   comparison: "none",
   threshold: 1,
 };

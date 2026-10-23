@@ -1,8 +1,9 @@
 /** Demo-only evaluation of the structured UI plan. No parsing or execution of query text.
- * Finite float samples only: no stale markers, histograms, regex or binary joins.
+ * Finite input samples only: no stale markers, histograms or binary vector joins.
  * Prometheus rate extrapolation follows the pinned backend's float algorithm.
  */
 import type { Plan, Sample, Series } from "./model.ts";
+import { compileMatchers, type LabelPredicate } from "./matchers.ts";
 
 function counter(
   samples: [number, number][],
@@ -28,20 +29,16 @@ function counter(
   return rate ? result / (end - start) : result;
 }
 
-export function evaluate(plan: Plan, data: Series[], time: number): Sample[] {
+export function evaluate(
+  plan: Plan,
+  data: Series[],
+  time: number,
+  matches: LabelPredicate = compileMatchers(plan.matchers),
+): Sample[] {
   const vector: Sample[] = [];
   for (const series of data) {
     const labels = { ...series.labels, __name__: series.metric };
-    if (
-      series.metric !== plan.metric ||
-      !plan.matchers.every((m) => {
-        const value = Object.hasOwn(labels, m.label)
-          ? labels[m.label as keyof typeof labels]
-          : "";
-        return m.op === "=" ? value === m.value : value !== m.value;
-      })
-    )
-      continue;
+    if (series.metric !== plan.metric || !matches(labels)) continue;
     let value: number | undefined;
     if (plan.rollup === "none") {
       // Prometheus 3.15 excludes the exact lookback boundary.
@@ -105,6 +102,40 @@ export function evaluate(plan: Plan, data: Series[], time: number): Sample[] {
       if (plan.aggregate === "max") value = Math.max(...values);
       if (plan.aggregate === "count") value = values.length;
       return { labels, value };
+    });
+  }
+  if (plan.arithmetic !== "none") {
+    result = result.map(({ labels, value }) => {
+      if (plan.arithmetic === "positive") return { labels, value };
+      const outputLabels = { ...labels };
+      delete outputLabels.__name__;
+      if (plan.arithmetic === "negate")
+        return { labels: outputLabels, value: -value };
+      const [left, right] =
+        plan.scalarSide === "left"
+          ? [plan.operand, value]
+          : [value, plan.operand];
+      switch (plan.arithmetic) {
+        case "+":
+          value = left + right;
+          break;
+        case "-":
+          value = left - right;
+          break;
+        case "*":
+          value = left * right;
+          break;
+        case "/":
+          value = left / right;
+          break;
+        case "%":
+          value = left % right;
+          break;
+        case "**":
+          value = left ** right;
+          break;
+      }
+      return { labels: outputLabels, value };
     });
   }
   return result.filter(({ value }) => {

@@ -102,11 +102,13 @@ export const groups = [
         title: category.title,
         description: category.description,
         apiCategory: category.id,
+        parent: "reference/api",
       })),
       {
         slug: "reference/models",
         source: "docs/models.md",
         title: "Models & shared types",
+        parent: "reference/api",
         description:
           "Result fields, ingestion data, time values, registry helpers and errors.",
       },

@@ -11,7 +11,7 @@ metadata still declares Python 3.8+; changes must respect that declaration until
 it is explicitly revised. Install the Python package from the repository root:
 
 ```sh
-python -m pip install -e "python/metricraft[dev]"
+python -m pip install -e ".[dev]"
 python scripts/dev.py build
 ```
 
@@ -89,6 +89,11 @@ Add focused regression tests for behavior changes. For performance work, measure
 representative construction and rendering separately from HTTP I/O; include the
 revision, build profile and workload. Do not infer speedups from the use of Rust.
 Native wheel publication requires the bundled library and an installed-wheel test.
+Build distributions from the repository root with `python -m build`. The Python
+metadata lives beside the Rust workspace so source archives can be built on their
+own. The C ABI is independent of CPython, so wheels use `py3-none` with a platform
+tag. Python package versions are explicit in `pyproject.toml`; release tags must
+match them exactly.
 After building distributions, run `python scripts/check_python_package.py <dist>`
 to verify the installed SDK without source imports or native code. This also
 checks that historical fixtures and provider entry points are not shipped.
@@ -144,20 +149,25 @@ Linux x86_64, Windows x86_64, macOS Intel and macOS Apple Silicon. Linux builds 
 inside manylinux_2_28 and pass `auditwheel repair`. Each wheel contains one native
 library and its source SHA; validation checks platform metadata, RECORD hashes,
 client-only usage and installed native query construction without source fallbacks.
-The staging `py3-none-any` wheel is never uploaded as a release artifact.
+Every built wheel contains the native library and has a platform tag.
 
 Artifacts are named `metricraft-dist-<platform>` and `metricraft-dist-sdist` and
-are retained for 14 days. The sdist is the lightweight Python source distribution;
-it contains no native payload or Rust sources. A Git checkout is required to build
-the Rust core locally. Historical Python AST fixtures remain source-checkout only.
+are retained for 14 days. The sdist includes the Python SDK, Rust sources and Cargo
+lockfile. CI rebuilds and installs it outside the checkout with a fresh native
+build directory. Source installations require Rust and a platform C linker;
+missing toolchains fail installation instead of installing an unusable builder.
+Historical Python AST fixtures remain source-checkout only.
 
 `Release` reuses the complete CI workflow at the selected commit, then publishes
 the already-tested artifacts without rebuilding them. A pushed `v*` tag triggers
 publication after version/source checks pass. Manual dispatch defaults to build
 only; publication requires selecting an existing version tag and setting `publish`.
-Configure PyPI Trusted Publishing for `release.yml`, or provide `PYPI_API_TOKEN`
-(`PYPI_PASSWORD` is accepted for existing token configurations). Regular CI uses
-read-only permissions and does not need publication credentials.
+Configure PyPI Trusted Publishing for `NagareWorks/metricraft`, `release.yml`,
+environment `release`. Publication uses GitHub OIDC, with no long-lived PyPI token.
+Regular CI uses read-only permissions and does not need publication credentials.
+After publication, all four platforms download their wheel from public PyPI,
+compare its SHA-256 with the tested artifact and run the isolated installation
+checks again. A successful upload alone is not release completion.
 
 ## Submit a change
 

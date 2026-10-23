@@ -29,7 +29,10 @@ def verify(wheel, source_commit=None):
         target = manifest["target"]
         expected_platform, library = TARGETS[target]
         if source_commit and manifest["source_commit"] != source_commit:
-            raise ValueError("Native artifact was built from a different source commit")
+            raise ValueError("Native artifact source commit mismatch: expected " + source_commit
+                             + ", got " + repr(manifest["source_commit"]))
+        if manifest.get("source_dirty"):
+            raise ValueError("Native artifact was built from a dirty or unidentified source tree")
         platforms = platform.split(".")
         if target == "x86_64-unknown-linux-gnu":
             if not all(p.startswith("manylinux") and p.endswith("_x86_64") for p in platforms):

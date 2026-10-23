@@ -12,14 +12,21 @@ published. Start with Python 3.8+ and a Rust toolchain:
 ```sh
 git clone https://github.com/NagareWorks/metricraft.git
 cd metricraft
-python -m pip install -e "python/metricraft[dev]"
+python -m pip install -e ".[dev]"
 python scripts/dev.py build
 python scripts/dev.py smoke
 ```
 
-`build` compiles the Rust library. `smoke` runs offline examples, so no metrics
+The editable install compiles the native library; `build` also prepares the
+workspace library for development checks. `smoke` runs offline examples, so no metrics
 server is needed. Native wheels are built in CI for Linux x86_64, Windows x86_64,
 macOS Intel and Apple Silicon; they are not yet a published package release.
+
+The source distribution includes the Rust sources and locked Cargo dependencies.
+Installing it requires Rust (`cargo` and `rustc`) and a C linker for your platform.
+If a compatible wheel is available, pip uses it without requiring a Rust toolchain.
+The release wheels target glibc 2.28+ on Linux x86_64, Windows x86_64 and macOS 11+
+on Intel and Apple Silicon. Other platforms currently require a source build.
 
 ## Compose a query
 

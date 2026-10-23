@@ -1,0 +1,9 @@
+# Only the SDK and the sources needed to build its native library are distributed.
+global-exclude *
+include pyproject.toml setup.py _build_native.py README.md LICENSE NOTICE
+include Cargo.toml Cargo.lock metricraft-source.json
+include python/metricraft/README.md
+recursive-include python/metricraft/src *.py py.typed
+recursive-include crates *.toml *.rs *.h
+prune python/metricraft/src/metricraft/_legacy
+global-exclude __pycache__ *.py[cod]

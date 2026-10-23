@@ -1,6 +1,7 @@
 """Failure contracts for the wheel assembly and release validation boundary."""
 import csv
 import io
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -51,6 +52,17 @@ class NativeWheelTests(unittest.TestCase):
     def test_wrong_source_commit_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "source commit"):
             verify(self.build(), "b" * 40)
+
+    def test_dirty_source_cannot_be_published(self):
+        wheel = self.build()
+        def dirty(entries):
+            path = "metricraft/native/build.json"
+            manifest = json.loads(entries[path])
+            manifest["source_dirty"] = True
+            entries[path] = json.dumps(manifest).encode()
+        self.rewrite(wheel, dirty)
+        with self.assertRaisesRegex(ValueError, "dirty"):
+            verify(wheel, self.commit)
 
     def test_explicit_zip_directories_do_not_need_record_rows(self):
         wheel = self.build()

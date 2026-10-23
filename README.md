@@ -57,19 +57,16 @@ Client-only use requires no native library.
 
 ## Start here
 
-Install from source with Python 3.8+ and a Rust toolchain:
+Install the first native release candidate with Python 3.8+:
 
 ```sh
-git clone https://github.com/NagareWorks/metricraft.git
-cd metricraft
-python -m pip install -e ".[dev]"
-python scripts/dev.py build
-python scripts/dev.py smoke
+python -m pip install metricraft==0.3.0rc1
 ```
 
-Native wheels are assembled and tested by GitHub Actions for Linux x86_64,
-Windows x86_64, macOS Intel and Apple Silicon. Release publication uses those
-same validated artifacts.
+Wheels include the Rust core for Linux x86_64, Windows x86_64, macOS Intel and
+Apple Silicon. No Rust toolchain is needed when a matching wheel is available.
+See [getting started](https://nagareworks.github.io/metricraft/getting-started/)
+for platform requirements and [contributing](CONTRIBUTING.md) for source setup.
 
 ## One builder, two dialects
 

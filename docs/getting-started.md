@@ -4,10 +4,20 @@ MetriCraft is a Python SDK for constructing PromQL and MetricsQL and querying
 Prometheus or VictoriaMetrics. Rust owns the immutable expression tree;
 Python provides the fluent API and an independent HTTP client.
 
+## Install the release candidate
+
+With Python 3.8+, install the first native release candidate from PyPI:
+
+```sh
+python -m pip install metricraft==0.3.0rc1
+```
+
+Matching wheels include the Rust core and need no Rust toolchain. This is a
+prerelease; pin the version explicitly while evaluating it in your application.
+
 ## Install from source
 
-These docs describe the development branch. A native release has not yet been
-published. Start with Python 3.8+ and a Rust toolchain:
+For development, use Python 3.8+ and a Rust toolchain:
 
 ```sh
 git clone https://github.com/NagareWorks/metricraft.git
@@ -19,8 +29,8 @@ python scripts/dev.py smoke
 
 The editable install compiles the native library; `build` also prepares the
 workspace library for development checks. `smoke` runs offline examples, so no metrics
-server is needed. Native wheels are built in CI for Linux x86_64, Windows x86_64,
-macOS Intel and Apple Silicon; they are not yet a published package release.
+server is needed. Native wheels are built and tested in CI for Linux x86_64,
+Windows x86_64, macOS Intel and Apple Silicon.
 
 The source distribution includes the Rust sources and locked Cargo dependencies.
 Installing it requires Rust (`cargo` and `rustc`) and a C linker for your platform.

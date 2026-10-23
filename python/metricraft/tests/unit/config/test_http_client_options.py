@@ -1,5 +1,6 @@
 """Tests for HttpClientOptions container."""
 
+from dataclasses import FrozenInstanceError, replace
 from typing import Optional
 
 import pytest
@@ -24,6 +25,28 @@ def test_ensure_accepts_instance():
     original = HttpClientOptions(timeout=(1, 2))
     ensured = HttpClientOptions.ensure(original)
     assert ensured is original
+
+
+def test_constructor_preserves_frozen_dataclass_and_independent_defaults():
+    headers, extras = {"x-count": 2}, {"flag": True}
+    original = HttpClientOptions(5, headers, extras=extras)
+    connect, read = original.timeout
+    assert (connect, read) == (5.0, 5.0)
+    headers["x-count"] = 3
+    extras["flag"] = False
+    assert original.default_headers == {"X-Count": "2"}
+    assert original.extras == {"flag": True}
+    updated = replace(original, timeout=2)
+    assert updated.timeout == (2.0, 2.0)
+    assert updated.default_headers == original.default_headers
+    assert updated.default_headers is not original.default_headers
+    assert updated.extras is not original.extras
+    with pytest.raises(FrozenInstanceError):
+        original.timeout = (3, 4)
+    first, second = HttpClientOptions(), HttpClientOptions()
+    first.default_headers["X"] = "1"
+    first.extras["a"] = 1
+    assert second.to_dict() == {}
 
 
 def test_merge_combines_values_and_headers():

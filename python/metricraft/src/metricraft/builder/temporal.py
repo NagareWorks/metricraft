@@ -1,10 +1,11 @@
 """Query-time factories, ranges and time modifiers."""
 from __future__ import annotations
 
-from typing import Union
 from datetime import datetime
+from typing import Optional, TYPE_CHECKING, Union
+
+from ._types import Number, Window
 from .capabilities import vm_only, prom_experimental, prom_only
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .query_builder import QueryBuilder
@@ -16,21 +17,21 @@ class TemporalMixin:
     __slots__ = ()
 
     @classmethod
-    def time(cls):
+    def time(cls) -> QueryBuilder:
         return cls.function("time")
 
     from_time = time
 
     @classmethod
     @vm_only
-    def now(cls):
+    def now(cls) -> QueryBuilder:
         return cls.function("now")
 
     from_now = now
 
     @classmethod
     @prom_experimental
-    def start(cls):
+    def start(cls) -> QueryBuilder:
         """Query start; PromQL requires experimental-functions opt-in."""
         return cls.function("start")
 
@@ -38,14 +39,14 @@ class TemporalMixin:
 
     @classmethod
     @prom_experimental
-    def end(cls):
+    def end(cls) -> QueryBuilder:
         return cls.function("end")
 
     from_end = end
 
     @classmethod
     @prom_experimental
-    def step(cls):
+    def step(cls) -> QueryBuilder:
         return cls.function("step")
 
     @staticmethod
@@ -54,12 +55,21 @@ class TemporalMixin:
             raise TypeError("pass either window or duration, not both")
         return duration if duration is not None else window if window is not None else default
 
-    def range(self, window=None, *, duration=None) -> QueryBuilder:
+    def range(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         window = self._window(window, duration, "5m")
         from ._expression import Expression
         return self._apply("range_expr", children=(self, window)) if isinstance(window, Expression) else self._unary("range", window)
 
-    def subquery(self, window=None, step=None, *, range_duration=None, resolution=None) -> QueryBuilder:
+    def subquery(
+        self,
+        window: Optional[Window] = None,
+        step: Optional[Window] = None,
+        *,
+        range_duration: Optional[Window] = None,
+        resolution: Optional[Window] = None
+    ) -> QueryBuilder:
         window, step = self._window(window, range_duration), self._window(step, resolution, "")
         from ._expression import Expression
         if isinstance(window, Expression) or isinstance(step, Expression):
@@ -70,13 +80,13 @@ class TemporalMixin:
             return self._apply("subquery_expr", children=args)
         return self._unary("subquery", "" if window is None else window, step)
 
-    def offset(self, duration: str) -> QueryBuilder:
+    def offset(self, duration: Window) -> QueryBuilder:
         from ._expression import Expression
         if isinstance(duration, Expression):
             return self._apply("offset_expr", children=(self, duration))
         return self._unary("offset", duration)
 
-    def at(self, timestamp: Union[int, float, str]) -> QueryBuilder:
+    def at(self, timestamp: Union[Number, str, datetime, QueryBuilder]) -> QueryBuilder:
         from ._expression import Expression
         if isinstance(timestamp, Expression):
             return self._apply("at_expr", children=(self, timestamp))
@@ -99,21 +109,21 @@ class TemporalMixin:
         return self._unary("at", str(timestamp))
 
     @prom_only
-    def anchored(self):
+    def anchored(self) -> QueryBuilder:
         return self._unary("anchored")
 
     @prom_only
-    def smoothed(self):
+    def smoothed(self) -> QueryBuilder:
         return self._unary("smoothed")
 
 
     @classmethod
     @prom_only
     @prom_experimental
-    def query_range(cls):
+    def query_range(cls) -> QueryBuilder:
         return cls.function("range")
 
     @prom_only
     @prom_experimental
-    def start_timestamp(self):
+    def start_timestamp(self) -> QueryBuilder:
         return self.function("start_timestamp", self)

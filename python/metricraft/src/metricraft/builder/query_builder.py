@@ -1,16 +1,19 @@
 """Public immutable builder composed from stateless operation groups."""
+from __future__ import annotations
+
 from ._expression import Expression
+from ._types import ScalarInput
 from .aggregation import AggregationMixin
 from .diagnostics import DiagnosticMixin
-from .functions import FunctionMixin
 from .extended_rollups import ExtendedRollupMixin
-from .transforms import TransformMixin
-from .templates import TemplateMixin
+from .functions import FunctionMixin
 from .labels import LabelMixin
 from .operators import OperatorMixin
 from .rollups import RollupMixin
 from .selectors import SelectorMixin
+from .templates import TemplateMixin
 from .temporal import TemporalMixin
+from .transforms import TransformMixin
 
 
 class QueryBuilder(
@@ -25,6 +28,6 @@ class QueryBuilder(
 
     __slots__ = ()
 
-    def vector(value):
+    def vector(value: ScalarInput) -> QueryBuilder:
         """Convert a scalar expression, or construct with QueryBuilder.vector(number)."""
         return QueryBuilder.function("vector", value)

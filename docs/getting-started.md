@@ -7,19 +7,53 @@ Python provides the fluent API and an independent HTTP client.
 ## Install from PyPI
 
 Requires Python 3.8+. We recommend [uv](https://docs.astral.sh/uv/) to manage
-your project's dependencies and environment:
+your project's dependencies and environment. In an existing uv project, run the
+command below; for a new project, run `uv init` first:
 
 ```sh
-uv add metricraft==0.3.0rc1
+uv add metricraft
 ```
 
-Or use pip:
+Or use pip in a virtual environment. Create one in your application directory:
 
 ```sh
-python -m pip install metricraft==0.3.0rc1
+python -m venv .venv
 ```
 
-This is a release candidate. Matching wheels include the Rust core.
+Activate it with `.venv\Scripts\Activate.ps1` in Windows PowerShell, or
+`source .venv/bin/activate` on Linux/macOS, then install:
+
+```sh
+python -m pip install metricraft
+```
+
+This is a release candidate. Matching wheels include the Rust core: you do not
+need Rust, Cargo, a compiler, or a clone of this repository to use them.
+With uv, run the Python examples using `uv run python` in place of `python`.
+
+### Precompiled platforms
+
+| System | Python architecture | Minimum runtime |
+| --- | --- | --- |
+| Windows | x86_64 (64-bit) | Windows with 64-bit Python |
+| Linux | x86_64 | glibc 2.28 or newer |
+| macOS | x86_64 (Intel) | macOS 11 or newer |
+| macOS | arm64 (Apple Silicon) | macOS 11 or newer |
+
+The wheel must match the running Python interpreter, including its architecture.
+Linux ARM64, Alpine/musl and 32-bit Windows do not currently have precompiled
+wheels. Source installations require Rust and a platform C linker; see
+[source setup](../CONTRIBUTING.md#set-up) if you need to build the SDK.
+
+To require a precompiled wheel and avoid a source build:
+
+```sh
+python -m pip install --only-binary=:all: metricraft
+```
+
+If pip reports no matching distribution, check Python's version and architecture
+and your package index. A mirror may not have synchronized the release yet;
+retry with `--index-url https://pypi.org/simple` when appropriate.
 
 ## Compose a query
 
@@ -32,7 +66,11 @@ text = rate.build("promql")
 
 assert text == 'sum by (job) (rate(http_requests_total{job="api"}[5m]))'
 assert requests.build("promql") == 'http_requests_total{job="api"}'
+print(text)
 ```
+
+Save this as `first_query.py` and run `python first_query.py`. It runs offline
+and prints `sum by (job) (rate(http_requests_total{job="api"}[5m]))`.
 
 The second assertion matters: deriving `rate` leaves `requests` unchanged.
 You can reuse any expression as the starting point for another branch.
@@ -57,6 +95,27 @@ with DatabaseClient(PrometheusConfig("http://localhost:9090")) as client:
 The client also accepts strings loaded from your application's storage. It does
 not need a native library when used with strings alone. Use context managers to
 close transports, or `async with` for asynchronous calls.
+
+## Check which package is loaded
+
+If an existing development installation is still loading a local checkout:
+
+```sh
+python -m pip show metricraft
+python -c "import metricraft; print(metricraft.__file__)"
+```
+
+An `Editable project location` points at source code. To replace that installation
+with the published wheel in the same environment:
+
+```sh
+python -m pip install --force-reinstall --only-binary=:all: --index-url https://pypi.org/simple metricraft
+```
+
+Restart an existing Python process or notebook kernel after replacing the package.
+Release wheels load their own native library. Remove a development-only
+`METRICRAFT_NATIVE_LIB` override if it points to an old or missing library.
+Keep source development installations in a separate virtual environment.
 
 ## Where to go next
 

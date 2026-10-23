@@ -1,10 +1,11 @@
 """Owning immutable native handle and the shared construction/build boundary."""
 from __future__ import annotations
 
-from typing import Union
 from weakref import finalize
+from typing import Any, Dict, Iterable, NoReturn, Optional, TYPE_CHECKING
+
+from ._types import BuildMode, Number, QueryInput
 from .capabilities import QueryMode
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .query_builder import QueryBuilder
@@ -15,7 +16,7 @@ class Expression:
 
     __slots__ = ("_handle", "__weakref__")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: object, **kwargs: object) -> None:
         if args or kwargs:
             raise TypeError(
                 "QueryBuilder() takes no configuration; select the dialect with build(mode=...)"
@@ -51,14 +52,14 @@ class Expression:
         return cls._apply("metric", name)
 
     @classmethod
-    def from_labels(cls, **labels) -> QueryBuilder:
+    def from_labels(cls, **labels: str) -> QueryBuilder:
         """Unnamed selector; PromQL build requires a matcher excluding empty values."""
         return cls._apply("selector", children=tuple(
             cls.from_string(part) for item in labels.items() for part in item
         ))
 
     @classmethod
-    def from_scalar(cls, value: Union[int, float]) -> QueryBuilder:
+    def from_scalar(cls, value: Number) -> QueryBuilder:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise TypeError("scalar must be a number")
         return cls._apply("number", str(value))
@@ -68,7 +69,7 @@ class Expression:
         return cls._apply("string", value)
 
     @classmethod
-    def from_tuple(cls, *values) -> QueryBuilder:
+    def from_tuple(cls, *values: QueryInput) -> QueryBuilder:
         """MetricsQL string/scalar tuple; elements remain typed, escaped expressions."""
         return cls._apply("tuple", children=tuple(cls._coerce(value) for value in values))
 
@@ -91,15 +92,22 @@ class Expression:
         )
 
     @classmethod
-    def function(cls, name: str, *args) -> QueryBuilder:
+    def function(cls, name: str, *args: QueryInput) -> QueryBuilder:
         """Call a function from the Rust signature catalog; strings are literals."""
         return cls._apply("call", name, children=tuple(cls._coerce(x) for x in args))
 
     def _unary(self, op, a="", b=""):
         return self._apply(op, a, b, (self,))
 
-    def build(self, mode: Union[QueryMode, str] = QueryMode.METRICSQL, *,
-              max_output_bytes=None, max_expanded_nodes=None, experimental_functions=False, features=()) -> str:
+    def build(
+        self,
+        mode: BuildMode = QueryMode.METRICSQL,
+        *,
+        max_output_bytes: Optional[int] = None,
+        max_expanded_nodes: Optional[int] = None,
+        experimental_functions: bool = False,
+        features: Iterable[str] = ()
+    ) -> str:
         """Render with native defaults of 1 MiB and 100,000 expanded nodes.
 
         Positive integer budgets override those defaults for this call only.
@@ -114,16 +122,16 @@ class Expression:
         return _native.build(self._handle, 0 if selected == QueryMode.PROMQL else 1,
                              max_output_bytes, max_expanded_nodes, experimental_functions, features)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.build()
 
-    def __bool__(self):
+    def __bool__(self) -> NoReturn:
         raise TypeError(
             "query expressions have no Python truth value; use and_()/or_()"
         )
 
-    def __copy__(self):
+    def __copy__(self) -> QueryBuilder:
         return self
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Dict[int, Any]) -> QueryBuilder:
         return self

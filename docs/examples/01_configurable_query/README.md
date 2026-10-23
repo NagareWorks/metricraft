@@ -4,15 +4,17 @@ This example maps an application's selections to metric names, allowed windows
 and label filters. It produces a PromQL string without a server or client config.
 The application supplies its own allowlists; label values remain literal data.
 
-After the [development setup](../../../CONTRIBUTING.md), run from the repository root:
+Install the published package in your application's virtual environment:
 
 ```sh
-python docs/examples/01_configurable_query/main.py
+python -m pip install metricraft
 ```
 
-If your native build is outside `target/`, set `CARGO_TARGET_DIR` or
-`METRICRAFT_NATIVE_LIB` before running. Alternatively `python scripts/dev.py smoke`
-builds the library and runs both examples.
+Save [the complete example](main.py) as `main.py`, then run `python main.py`.
+If you already have the repository, run
+`python docs/examples/01_configurable_query/main.py` from its root.
+Matching wheels include the native library; no Rust build or server is needed.
+See [installation](../../getting-started.md) for supported platforms and uv usage.
 
 Expected output:
 

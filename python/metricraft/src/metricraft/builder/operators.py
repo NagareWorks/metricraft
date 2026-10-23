@@ -1,8 +1,14 @@
 """Arithmetic, comparison, set operations and vector matching."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ._expression import Expression
+from ._types import Number, QueryInput, ScalarInput
 from .capabilities import vm_only, prom_only
+
+if TYPE_CHECKING:
+    from .query_builder import QueryBuilder
 
 
 class OperatorMixin:
@@ -20,82 +26,82 @@ class OperatorMixin:
         return self._apply(op, children=(self, rhs))
 
     @vm_only
-    def eq_any(self, *values):
+    def eq_any(self, *values: QueryInput) -> QueryBuilder:
         return self.eq(self.from_tuple(*values))
 
     @vm_only
-    def ne_all(self, *values):
+    def ne_all(self, *values: QueryInput) -> QueryBuilder:
         return self.ne(self.from_tuple(*values))
 
     @vm_only
-    def group_left_all(self, *, prefix=""):
+    def group_left_all(self, *, prefix: str = "") -> QueryBuilder:
         return self._unary("group_left_all", prefix)
 
     @vm_only
-    def group_right_all(self, *, prefix=""):
+    def group_right_all(self, *, prefix: str = "") -> QueryBuilder:
         return self._unary("group_right_all", prefix)
 
     @prom_only
-    def trim_upper(self, threshold):
+    def trim_upper(self, threshold: ScalarInput) -> QueryBuilder:
         return self._binary("</", threshold)
 
     @prom_only
-    def trim_lower(self, threshold):
+    def trim_lower(self, threshold: ScalarInput) -> QueryBuilder:
         return self._binary(">/", threshold)
 
     @prom_only
-    def fill(self, value):
+    def fill(self, value: Number) -> QueryBuilder:
         return self._apply("fill", children=(self, self.from_scalar(value)))
 
     @prom_only
-    def fill_left(self, value):
+    def fill_left(self, value: Number) -> QueryBuilder:
         return self._apply("fill_left", children=(self, self.from_scalar(value)))
 
     @prom_only
-    def fill_right(self, value):
+    def fill_right(self, value: Number) -> QueryBuilder:
         return self._apply("fill_right", children=(self, self.from_scalar(value)))
 
-    def __add__(self, other):
+    def __add__(self, other: QueryInput) -> QueryBuilder:
         return self._binary("+", other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("-", other)
 
-    def __mul__(self, other):
+    def __mul__(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("*", other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("/", other)
 
-    def __mod__(self, other):
+    def __mod__(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("%", other)
 
-    def __pow__(self, other):
+    def __pow__(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("^", other)
 
-    def __radd__(self, other):
+    def __radd__(self, other: QueryInput) -> QueryBuilder:
         return self._coerce(other)._binary("+", self)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: Number) -> QueryBuilder:
         return self.from_scalar(other)._binary("-", self)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Number) -> QueryBuilder:
         return self.from_scalar(other)._binary("*", self)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: Number) -> QueryBuilder:
         return self.from_scalar(other)._binary("/", self)
 
-    def __neg__(self):
+    def __neg__(self) -> QueryBuilder:
         return self._unary("negate")
 
-    def __pos__(self):
+    def __pos__(self) -> QueryBuilder:
         return self._unary("positive")
 
     positive = __pos__
 
     negative = __neg__
 
-    def parenthesize(self):
+    def parenthesize(self) -> QueryBuilder:
         return self._unary("parenthesize")
 
     add = __add__
@@ -110,35 +116,35 @@ class OperatorMixin:
 
     pow = __pow__
 
-    def eq(self, other):
+    def eq(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("==", other)
 
-    def ne(self, other):
+    def ne(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("!=", other)
 
-    def gt(self, other):
+    def gt(self, other: ScalarInput) -> QueryBuilder:
         return self._binary(">", other)
 
-    def ge(self, other):
+    def ge(self, other: ScalarInput) -> QueryBuilder:
         return self._binary(">=", other)
 
-    def lt(self, other):
+    def lt(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("<", other)
 
-    def le(self, other):
+    def le(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("<=", other)
 
-    def between(self, minimum, maximum):
+    def between(self, minimum: Number, maximum: Number) -> QueryBuilder:
         """Keep instant-vector samples within inclusive literal numeric bounds."""
         return self._apply("between", children=(self, self.from_scalar(minimum), self.from_scalar(maximum)))
 
-    def and_(self, other):
+    def and_(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("and", other)
 
-    def or_(self, other):
+    def or_(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("or", other)
 
-    def unless(self, other):
+    def unless(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("unless", other)
 
     __gt__ = gt
@@ -149,18 +155,22 @@ class OperatorMixin:
 
     __le__ = le
 
-    __eq__ = eq
+    # These comparisons construct expressions instead of Python truth values.
+    # Explicit methods let editors distinguish them from object.__eq__/__ne__.
+    def __eq__(self, other: ScalarInput) -> QueryBuilder:
+        return self._binary("==", other)
 
-    __ne__ = ne
+    def __ne__(self, other: ScalarInput) -> QueryBuilder:
+        return self._binary("!=", other)
 
     __and__ = and_
 
     __or__ = or_
 
-    def atan2(self, other):
+    def atan2(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("atan2", other)
 
-    def bool(self):
+    def bool(self) -> QueryBuilder:
         return self._unary("bool")
 
     def _modifier(self, name, labels):
@@ -168,30 +178,30 @@ class OperatorMixin:
             name, children=(self,) + tuple(self.from_string(x) for x in labels)
         )
 
-    def on(self, *labels):
+    def on(self, *labels: str) -> QueryBuilder:
         return self._modifier("on", labels)
 
-    def ignoring(self, *labels):
+    def ignoring(self, *labels: str) -> QueryBuilder:
         return self._modifier("ignoring", labels)
 
-    def group_left(self, *labels):
+    def group_left(self, *labels: str) -> QueryBuilder:
         return self._modifier("group_left", labels)
 
-    def group_right(self, *labels):
+    def group_right(self, *labels: str) -> QueryBuilder:
         return self._modifier("group_right", labels)
 
     @vm_only
-    def if_(self, other):
+    def if_(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("if", other)
 
     @vm_only
-    def ifnot(self, other):
+    def ifnot(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("ifnot", other)
 
     @vm_only
-    def default(self, other):
+    def default(self, other: ScalarInput) -> QueryBuilder:
         return self._binary("default", other)
 
     @vm_only
-    def union(self, *others):
+    def union(self, *others: ScalarInput) -> QueryBuilder:
         return self.function("union", self, *others)

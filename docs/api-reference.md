@@ -4,6 +4,35 @@ Import the public entry points from `metricraft`. Use `QueryBuilder` for immutab
 construction and `DatabaseClient` for I/O. All configurations live in the same
 package.
 
+## Python type hints
+
+The next release includes inline type hints and a `py.typed` marker for type
+checkers and editors. These additions are on the main branch and are not included
+in the published `0.3.0rc1` wheel.
+
+Fluent calls, Python operators and dialect-marked methods return `QueryBuilder`;
+`build()` returns `str`. Client calls return `MetricsQueryResult` or the matching
+metadata result, including when awaited. The installed-wheel CI checks these
+contracts and ensures invalid argument types are rejected by mypy and Pyright.
+
+Signatures use a few shared input aliases:
+
+| Type | Accepted Python values |
+| --- | --- |
+| `Number` | `int` or `float` (runtime checks reject booleans) |
+| `ScalarInput` | A number or `QueryBuilder` expression |
+| `StringInput` | A string or a string-valued expression |
+| `QueryInput` | A number, string or `QueryBuilder` expression |
+| `Window` | A duration string or duration expression |
+| `BuildMode` | `QueryMode` or the literal `"promql"` / `"metricsql"` |
+| `MatchInput` | A selector string, `QueryBuilder`, or a sequence (such as a list or tuple) containing either |
+
+Python annotations check argument shapes and preserve chained return types. Rust
+still validates expression kinds, allowed values, dialects and feature flags.
+For example, a `QueryBuilder` used as a scalar argument must represent a scalar
+in the selected language. Diagnostics and custom HTTP payloads contain dynamic
+data; their dictionaries intentionally retain `Any` values.
+
 ## Reading the reference
 
 The reference is divided into category pages. Signatures, parameter names,

@@ -5,7 +5,8 @@ Synchronous and asynchronous Prometheus/VictoriaMetrics HTTP client.
 import logging
 from weakref import finalize
 from functools import cached_property
-from typing import Any, Dict, Iterable, List, Optional, Union
+from types import TracebackType
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Type, Union
 
 from metricraft.client._time import ingestion_milliseconds, query_time, range_bounds
 from metricraft.client._resources import TransportResources
@@ -25,6 +26,8 @@ from metricraft.enums import DBType
 
 
 _logger = logging.getLogger(__name__)
+# Metadata requests read their selector inputs without modifying the collection.
+MatchInput = Union[str, QueryBuilder, Sequence[Union[str, QueryBuilder]]]
 
 
 class DatabaseClient:
@@ -97,14 +100,16 @@ class DatabaseClient:
     def __enter__(self) -> "DatabaseClient":
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> bool:
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc: Optional[BaseException], tb: Optional[TracebackType]) -> Literal[False]:
         self.close()
         return False
 
     async def __aenter__(self) -> "DatabaseClient":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> bool:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]],
+                        exc: Optional[BaseException], tb: Optional[TracebackType]) -> Literal[False]:
         await self.aclose()
         return False
 
@@ -325,8 +330,8 @@ class DatabaseClient:
         *,
         step: Optional[str] = None,
         limit: Optional[int] = None,
-        extra_label: Optional[Union[str, Dict[str, str]]] = None,
-        extra_filters: Optional[Union[str, list]] = None,
+        extra_label: Optional[Union[str, Dict[str, str], Iterable[str]]] = None,
+        extra_filters: Optional[Union[str, Iterable[str]]] = None,
         round_digits: Optional[int] = None,
         nocache: Optional[bool] = None,
         trace: Optional[bool] = None,
@@ -408,8 +413,8 @@ class DatabaseClient:
         timeout: Optional[str] = None,
         *,
         limit: Optional[int] = None,
-        extra_label: Optional[Union[str, Dict[str, str]]] = None,
-        extra_filters: Optional[Union[str, list]] = None,
+        extra_label: Optional[Union[str, Dict[str, str], Iterable[str]]] = None,
+        extra_filters: Optional[Union[str, Iterable[str]]] = None,
         round_digits: Optional[int] = None,
         nocache: Optional[bool] = None,
         trace: Optional[bool] = None,
@@ -564,8 +569,8 @@ class DatabaseClient:
             *,
             step: Optional[str] = None,
             limit: Optional[int] = None,
-            extra_label: Optional[Union[str, Dict[str, str]]] = None,
-            extra_filters: Optional[Union[str, list]] = None,
+            extra_label: Optional[Union[str, Dict[str, str], Iterable[str]]] = None,
+            extra_filters: Optional[Union[str, Iterable[str]]] = None,
             round_digits: Optional[int] = None,
             nocache: Optional[bool] = None,
             trace: Optional[bool] = None,
@@ -646,8 +651,8 @@ class DatabaseClient:
         timeout: Optional[str] = None,
         *,
         limit: Optional[int] = None,
-        extra_label: Optional[Union[str, Dict[str, str]]] = None,
-        extra_filters: Optional[Union[str, list]] = None,
+        extra_label: Optional[Union[str, Dict[str, str], Iterable[str]]] = None,
+        extra_filters: Optional[Union[str, Iterable[str]]] = None,
         round_digits: Optional[int] = None,
         nocache: Optional[bool] = None,
         trace: Optional[bool] = None,
@@ -874,24 +879,24 @@ class DatabaseClient:
             return 30.0
         return float(timeout)
 
-    def _prepare_match_params(self, match: Union[str, QueryBuilder, list]) -> list:
+    def _prepare_match_params(self, match: MatchInput) -> List[str]:
         """
         Convert match parameter to list of query strings.
 
         Args:
-            match: Series selector(s) - string, QueryBuilder, or list of either
+            match: Series selector(s) - string, QueryBuilder, or sequence of either
 
         Returns:
             List of query strings
         """
-        if isinstance(match, list):
+        if isinstance(match, Sequence) and not isinstance(match, (str, bytes, bytearray)):
             return [self._prepare_query(item) for item in match]
         return [self._prepare_query(match)]
 
     # Metadata queries
     def series(
         self,
-        match: Union[str, QueryBuilder, list],
+        match: MatchInput,
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
@@ -906,7 +911,7 @@ class DatabaseClient:
             match: Series selector(s). Can be:
                    - Single selector string: 'up{job="api"}'
                    - QueryBuilder instance
-                   - List of selectors: ['up', 'process_cpu_seconds_total']
+                   - Sequence of selectors: ['up', 'process_cpu_seconds_total']
             start: Start timestamp (optional)
             end: End timestamp (optional)
             limit: Maximum number of returned series (optional, 0 means disabled)
@@ -941,7 +946,7 @@ class DatabaseClient:
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
-        match: Optional[Union[str, QueryBuilder, list]] = None,
+        match: Optional[MatchInput] = None,
         limit: Optional[int] = None,
         account_id: Optional[int] = None,
         custom_params: Optional[Dict[str, Any]] = None,
@@ -987,7 +992,7 @@ class DatabaseClient:
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
-        match: Optional[Union[str, QueryBuilder, list]] = None,
+        match: Optional[MatchInput] = None,
         limit: Optional[int] = None,
         account_id: Optional[int] = None,
         custom_params: Optional[Dict[str, Any]] = None,
@@ -1031,7 +1036,7 @@ class DatabaseClient:
     # Async metadata queries
     async def series_async(
         self,
-        match: Union[str, QueryBuilder, list],
+        match: MatchInput,
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
@@ -1067,7 +1072,7 @@ class DatabaseClient:
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
-        match: Optional[Union[str, QueryBuilder, list]] = None,
+        match: Optional[MatchInput] = None,
         limit: Optional[int] = None,
         account_id: Optional[int] = None,
         custom_params: Optional[Dict[str, Any]] = None,
@@ -1103,7 +1108,7 @@ class DatabaseClient:
         start: Optional[TimeValue] = None,
         end: Optional[TimeValue] = None,
         *,
-        match: Optional[Union[str, QueryBuilder, list]] = None,
+        match: Optional[MatchInput] = None,
         limit: Optional[int] = None,
         account_id: Optional[int] = None,
         custom_params: Optional[Dict[str, Any]] = None,

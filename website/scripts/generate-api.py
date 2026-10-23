@@ -69,7 +69,7 @@ def main():
     for name in ("QueryBuilder", "DatabaseClient", "PrometheusConfig", "VMSingleConfig", "VMClusterConfig", "HttpClientOptions"):
         node, path = classes[name]
         entries = {k: v for k, v in methods(name).items() if not k.startswith("_") or k == "__init__"}
-        if name == "HttpClientOptions":
+        if name == "HttpClientOptions" and "__init__" not in entries:
             fields = [n for n in node.body if isinstance(n, ast.AnnAssign)]
             def default(n):
                 return "{}" if isinstance(n.value, ast.Call) else ast.unparse(n.value) if n.value else None

@@ -79,6 +79,9 @@ include = ["metricraft", "metricraft.*"]
 [tool.setuptools.package-dir]
 "" = "python/metricraft/src"
 
+[tool.setuptools.package-data]
+metricraft = ["py.typed"]
+
 [tool.setuptools.exclude-package-data]
 "metricraft" = [
     "run_tests.py",

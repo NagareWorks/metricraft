@@ -61,16 +61,17 @@ Requires Python 3.8+. We recommend [uv](https://docs.astral.sh/uv/) to manage
 your project's dependencies and environment:
 
 ```sh
-uv add metricraft==0.3.0rc1
+uv add metricraft
 ```
 
 Or use pip:
 
 ```sh
-python -m pip install metricraft==0.3.0rc1
+python -m pip install metricraft
 ```
 
-This is a release candidate. Matching wheels include the Rust core.
+This is a release candidate. Matching wheels include the Rust core, so no Rust
+toolchain or source checkout is needed on supported platforms.
 See [getting started](https://nagareworks.github.io/metricraft/getting-started/)
 for examples and [contributing](CONTRIBUTING.md) for source setup.
 

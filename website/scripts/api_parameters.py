@@ -106,7 +106,7 @@ CLIENT_PARAMS = {
     "account_id": ("int | None", "Nonnegative integer VictoriaMetrics cluster tenant ID. A per-request override is rejected for non-cluster configurations."),
     "custom_params": ("dict[str, Any] | None", "Additional request parameters merged after standard parameters, so duplicate keys can override them. Values and authorization remain caller-owned; no injection validation is performed."),
     "data": ("MetricsInsertData | Iterable[MetricsInsertData]", "Validated ingestion payload(s). Nonempty aligned timestamps/values are required. Only VictoriaMetrics ingestion is supported."),
-    "match": ("str | QueryBuilder | list[str | QueryBuilder] | None", "One or more series selectors; builders render using the backend dialect. series() requires this argument; labels/label_values may omit it."),
+    "match": ("str | QueryBuilder | Sequence[str | QueryBuilder] | None", "One or more series selectors, including lists and tuples; builders render using the backend dialect. series() requires this argument; labels/label_values may omit it."),
     "label_name": ("str", "Label whose known values should be returned, e.g. 'job'."),
 }
 

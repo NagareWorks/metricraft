@@ -75,6 +75,34 @@ class HttpClientOptions:
     executor: Optional[Any] = None
     extras: Dict[str, Any] = field(default_factory=dict)
 
+    def __init__(
+        self,
+        timeout: Optional[RawTimeout] = None,
+        default_headers: Optional[HeadersMapping] = None,
+        prepare_request: Optional[Callable[..., Any]] = None,
+        opener: Optional[Callable[..., Any]] = None,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
+        client_factory: Optional[Callable[..., Any]] = None,
+        async_client_factory: Optional[Callable[..., Any]] = None,
+        max_workers: Optional[int] = None,
+        executor: Optional[Any] = None,
+        extras: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        # Constructor inputs can be broader than the normalized stored fields.
+        object.__setattr__(self, "timeout", timeout)
+        object.__setattr__(self, "default_headers", {} if default_headers is None else default_headers)
+        object.__setattr__(self, "prepare_request", prepare_request)
+        object.__setattr__(self, "opener", opener)
+        object.__setattr__(self, "client", client)
+        object.__setattr__(self, "async_client", async_client)
+        object.__setattr__(self, "client_factory", client_factory)
+        object.__setattr__(self, "async_client_factory", async_client_factory)
+        object.__setattr__(self, "max_workers", max_workers)
+        object.__setattr__(self, "executor", executor)
+        object.__setattr__(self, "extras", {} if extras is None else extras)
+        self.__post_init__()
+
     def __post_init__(self) -> None:
         object.__setattr__(self, "timeout", _normalize_timeout(self.timeout))
         if self.max_workers is not None and self.max_workers <= 0:

@@ -8,7 +8,16 @@ maintained in English only.
 
 Use Python 3.11+ for development and an installed Rust toolchain. The package
 metadata still declares Python 3.8+; changes must respect that declaration until
-it is explicitly revised. Install the Python package from the repository root:
+it is explicitly revised. Use a dedicated virtual environment so an editable
+development install does not replace the published package used by your other
+applications. From the repository root:
+
+```sh
+python -m venv .venv
+```
+
+Activate with `.venv\Scripts\Activate.ps1` in Windows PowerShell or
+`source .venv/bin/activate` on Linux/macOS, then:
 
 ```sh
 python -m pip install -e ".[dev]"
@@ -99,6 +108,25 @@ After building distributions, run `python scripts/check_python_package.py <dist>
 to verify the installed SDK without source imports or native code. This also
 checks that retired modules and provider entry points are not shipped.
 Use `--require-bundled-native` to additionally verify the packaged Rust builder.
+Add `--typing` to run the installed-wheel consumer contracts with mypy (Python
+3.11+ for this check). The check runs outside the checkout and verifies fluent
+return types, decorated methods, operators, client calls and rejected arguments.
+Both `py.typed` and the inline annotations must ship in the wheel and sdist.
+The typing CI job checks the built Linux wheel with mypy and Pyright. All
+native-wheel jobs execute the three downloadable examples against the installed
+package without a source or native-path fallback.
+
+For a standalone typing check after building a wheel:
+
+```sh
+python scripts/check_python_typing.py /path/to/metricraft.whl
+```
+
+Install `pyright` and Node.js to add `--pyright`, matching the typing CI job.
+
+Keep public builder annotations complete, including aliases and special methods.
+Python types describe accepted argument shapes and return values; Rust still
+checks expression kinds, dialect restrictions, feature flags and value ranges.
 
 ## Documentation website
 

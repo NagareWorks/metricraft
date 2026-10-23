@@ -60,3 +60,24 @@ def test_victoriametrics_keeps_its_dialect_for_builder_arguments():
         with pytest.raises(ValueError, match="PromQL"):
             client.query(Q.from_metric("histogram").histogram_count())
     assert len(transport.calls) == 1
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_metadata_accepts_read_only_selector_sequences(container):
+    transport = RecordingTransport()
+    base = Q.from_metric("up").where_eq("job", "api")
+    selectors = container([base, "process_cpu_seconds_total"])
+    config = PrometheusConfig("http://prom.invalid", http_options=HttpClientOptions(client=transport))
+    with DatabaseClient(config) as client:
+        client.series(selectors)
+        client.labels(match=selectors)
+        client.label_values("job", match=selectors)
+        for _, params in transport.calls:
+            assert params["match[]"] == ['up{job="api"}', "process_cpu_seconds_total"]
+        # The request normalizes a new collection; the caller's input is reusable.
+        assert selectors[0] is base
+        assert selectors[1] == "process_cpu_seconds_total"
+        before = len(transport.calls)
+        with pytest.raises(ValueError, match="MetricsQL"):
+            client.series(container([base.default(0)]))
+        assert len(transport.calls) == before

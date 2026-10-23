@@ -1,8 +1,10 @@
 """Windowed functions and rollup convenience forms."""
 from __future__ import annotations
 
+from typing import Optional, TYPE_CHECKING
+
+from ._types import ScalarInput, StringInput, Window
 from .capabilities import vm_only, prom_only, prom_experimental
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .query_builder import QueryBuilder
@@ -17,90 +19,143 @@ class RollupMixin:
         source = self.range(window) if window is not None else self
         return self.function(name, source)
 
-    def rate(self, window=None, *, duration=None) -> QueryBuilder:
+    def rate(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("rate", self._window(window, duration))
 
-    def first_over_time(self, window=None):
+    def first_over_time(self, window: Optional[Window] = None) -> QueryBuilder:
         return self._rollup("first_over_time", window)
 
     @prom_only
     @prom_experimental
-    def ts_of_first_over_time(self, window=None):
+    def ts_of_first_over_time(self, window: Optional[Window] = None) -> QueryBuilder:
         return self._rollup("ts_of_first_over_time", window)
 
-    def irate(self, window=None, *, duration=None) -> QueryBuilder:
+    def irate(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("irate", self._window(window, duration))
 
-    def increase(self, window=None, *, duration=None) -> QueryBuilder:
+    def increase(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("increase", self._window(window, duration))
 
-    def delta(self, window=None, *, duration=None) -> QueryBuilder:
+    def delta(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("delta", self._window(window, duration))
 
-    def sum_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def sum_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("sum_over_time", self._window(window, duration))
 
-    def avg_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def avg_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("avg_over_time", self._window(window, duration))
 
-    def max_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def max_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("max_over_time", self._window(window, duration))
 
-    def min_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def min_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("min_over_time", self._window(window, duration))
 
-    def idelta(self, window=None, *, duration=None) -> QueryBuilder:
+    def idelta(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("idelta", self._window(window, duration))
 
-    def deriv(self, window=None, *, duration=None) -> QueryBuilder:
+    def deriv(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("deriv", self._window(window, duration))
 
-    def changes(self, window=None, *, duration=None) -> QueryBuilder:
+    def changes(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("changes", self._window(window, duration))
 
-    def resets(self, window=None, *, duration=None) -> QueryBuilder:
+    def resets(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("resets", self._window(window, duration))
 
-    def count_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def count_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("count_over_time", self._window(window, duration))
 
-    def stddev_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def stddev_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("stddev_over_time", self._window(window, duration))
 
-    def stdvar_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def stdvar_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("stdvar_over_time", self._window(window, duration))
 
-    def last_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def last_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("last_over_time", self._window(window, duration))
 
-    def present_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def present_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("present_over_time", self._window(window, duration))
 
-    def absent_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def absent_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("absent_over_time", self._window(window, duration))
 
     @prom_experimental
-    def mad_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def mad_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("mad_over_time", self._window(window, duration))
 
     @vm_only
-    def median_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def median_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("median_over_time", self._window(window, duration))
 
     @vm_only
-    def mode_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def mode_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("mode_over_time", self._window(window, duration))
 
     @vm_only
-    def zscore_over_time(self, window=None, *, duration=None) -> QueryBuilder:
+    def zscore_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("zscore_over_time", self._window(window, duration))
 
     @vm_only
-    def rate_over_sum(self, window=None, *, duration=None) -> QueryBuilder:
+    def rate_over_sum(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("rate_over_sum", self._window(window, duration))
 
     @vm_only
-    def rollup(self, window=None, duration=None, *, result=None, func=None) -> QueryBuilder:
+    def rollup(
+        self,
+        window: Optional[Window] = None,
+        duration: Optional[Window] = None,
+        *,
+        result: Optional[StringInput] = None,
+        func: Optional[StringInput] = None
+    ) -> QueryBuilder:
         if isinstance(window, str) and window in ("min", "max", "avg"):
             if result is not None or func is not None:
                 raise TypeError("rollup result was supplied twice")
@@ -116,34 +171,60 @@ class RollupMixin:
         return self.function("rollup", source) if result is None else self.function("rollup", source, result)
 
     @vm_only
-    def rollup_rate(self, window=None, *, result=None, duration=None) -> QueryBuilder:
+    def rollup_rate(
+        self,
+        window: Optional[Window] = None,
+        *,
+        result: Optional[StringInput] = None,
+        duration: Optional[Window] = None
+    ) -> QueryBuilder:
         window = self._window(window, duration)
         source = self.range(window) if window is not None else self
         return self.function("rollup_rate", source) if result is None else self.function("rollup_rate", source, result)
 
     @prom_only
     @prom_experimental
-    def ts_of_last_over_time(self, window=None, *, duration=None):
+    def ts_of_last_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("ts_of_last_over_time", self._window(window, duration))
 
     @prom_only
     @prom_experimental
-    def ts_of_max_over_time(self, window=None, *, duration=None):
+    def ts_of_max_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("ts_of_max_over_time", self._window(window, duration))
 
     @prom_only
     @prom_experimental
-    def ts_of_min_over_time(self, window=None, *, duration=None):
+    def ts_of_min_over_time(
+        self, window: Optional[Window] = None, *, duration: Optional[Window] = None
+    ) -> QueryBuilder:
         return self._rollup("ts_of_min_over_time", self._window(window, duration))
 
-    def quantile_over_time(self, q=None, window=None, *, quantile=None, duration=None):
+    def quantile_over_time(
+        self,
+        q: Optional[ScalarInput] = None,
+        window: Optional[Window] = None,
+        *,
+        quantile: Optional[ScalarInput] = None,
+        duration: Optional[Window] = None
+    ) -> QueryBuilder:
         if q is not None and quantile is not None:
             raise TypeError("pass either q or quantile, not both")
         source_window = self._window(window, duration)
         source = self.range(source_window) if source_window is not None else self
         return self.function("quantile_over_time", quantile if q is None else q, source)
 
-    def predict_linear(self, seconds=None, window=None, *, prediction_seconds=None, duration=None):
+    def predict_linear(
+        self,
+        seconds: Optional[ScalarInput] = None,
+        window: Optional[Window] = None,
+        *,
+        prediction_seconds: Optional[ScalarInput] = None,
+        duration: Optional[Window] = None
+    ) -> QueryBuilder:
         if seconds is not None and prediction_seconds is not None:
             raise TypeError("pass either seconds or prediction_seconds, not both")
         source_window = self._window(window, duration)
@@ -151,16 +232,27 @@ class RollupMixin:
         return self.function("predict_linear", source, prediction_seconds if seconds is None else seconds)
 
     @vm_only
-    def holt_winters(self, duration="5m", smoothing_factor=0.3, trend_factor=0.3):
+    def holt_winters(
+        self,
+        duration: Optional[Window] = "5m",
+        smoothing_factor: ScalarInput = 0.3,
+        trend_factor: ScalarInput = 0.3,
+    ) -> QueryBuilder:
         source = self.range(duration) if duration is not None else self
         return self.function("holt_winters", source, smoothing_factor, trend_factor)
 
     @prom_only
     @prom_experimental
-    def double_exponential_smoothing(self, window=None, *, smoothing_factor=0.3, trend_factor=0.3):
+    def double_exponential_smoothing(
+        self,
+        window: Optional[Window] = None,
+        *,
+        smoothing_factor: ScalarInput = 0.3,
+        trend_factor: ScalarInput = 0.3
+    ) -> QueryBuilder:
         source = self.range(window) if window is not None else self
         return self.function("double_exponential_smoothing", source, smoothing_factor, trend_factor)
 
-    def moving_average(self, duration="5m"):
+    def moving_average(self, duration: Optional[Window] = "5m") -> QueryBuilder:
         """Moving mean using the upstream avg_over_time function."""
         return self._rollup("avg_over_time", duration)

@@ -1,8 +1,10 @@
 """Numeric, histogram and instant-vector functions."""
 from __future__ import annotations
 
+from typing import Literal, Optional, TYPE_CHECKING
+
+from ._types import QueryInput, ScalarInput, StringInput
 from .capabilities import vm_only, prom_only, prom_experimental
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .query_builder import QueryBuilder
@@ -13,16 +15,16 @@ class FunctionMixin:
 
     __slots__ = ()
 
-    def abs(self):
+    def abs(self) -> QueryBuilder:
         return self._unary("abs")
 
-    def ceil(self):
+    def ceil(self) -> QueryBuilder:
         return self._unary("ceil")
 
-    def floor(self):
+    def floor(self) -> QueryBuilder:
         return self._unary("floor")
 
-    def sqrt(self):
+    def sqrt(self) -> QueryBuilder:
         return self._unary("sqrt")
 
     def day_of_month(self) -> QueryBuilder:
@@ -67,7 +69,7 @@ class FunctionMixin:
     def sgn(self) -> QueryBuilder:
         return self.function("sgn", self)
 
-    def sort(self, direction="asc") -> QueryBuilder:
+    def sort(self, direction: Literal["asc", "desc"] = "asc") -> QueryBuilder:
         if direction not in ("asc", "desc"):
             raise ValueError("sort direction must be asc or desc")
         return self.function("sort" if direction == "asc" else "sort_desc", self)
@@ -76,19 +78,19 @@ class FunctionMixin:
         return self.function("sort_desc", self)
 
     @prom_experimental
-    def sort_by_label(self, *labels):
+    def sort_by_label(self, *labels: StringInput) -> QueryBuilder:
         return self.function("sort_by_label", self, *labels)
 
     @prom_experimental
-    def sort_by_label_desc(self, *labels):
+    def sort_by_label_desc(self, *labels: StringInput) -> QueryBuilder:
         return self.function("sort_by_label_desc", self, *labels)
 
     @vm_only
-    def sort_by_label_numeric(self, *labels):
+    def sort_by_label_numeric(self, *labels: StringInput) -> QueryBuilder:
         return self.function("sort_by_label_numeric", self, *labels)
 
     @vm_only
-    def sort_by_label_numeric_desc(self, *labels):
+    def sort_by_label_numeric_desc(self, *labels: StringInput) -> QueryBuilder:
         return self.function("sort_by_label_numeric_desc", self, *labels)
 
     def timestamp(self) -> QueryBuilder:
@@ -147,7 +149,7 @@ class FunctionMixin:
 
     @prom_only
     @prom_experimental
-    def info(self, data_labels=None):
+    def info(self, data_labels: Optional[QueryBuilder] = None) -> QueryBuilder:
         return self.function("info", self) if data_labels is None else self.function("info", self, data_labels)
 
     @prom_only
@@ -161,27 +163,31 @@ class FunctionMixin:
     def scalar(self) -> QueryBuilder:
         return self.function("scalar", self)
 
-    def histogram_quantile(self, q, *, bounds_label=None):
+    def histogram_quantile(
+        self, q: ScalarInput, *, bounds_label: Optional[StringInput] = None
+    ) -> QueryBuilder:
         return self.function("histogram_quantile", q, self,
                              *(() if bounds_label is None else (bounds_label,)))
 
-    def histogram_fraction(self, lower, upper):
+    def histogram_fraction(self, lower: ScalarInput, upper: ScalarInput) -> QueryBuilder:
         return self.function("histogram_fraction", lower, upper, self)
 
     @vm_only
-    def smooth_exponential(self, smoothing_factor):
+    def smooth_exponential(self, smoothing_factor: ScalarInput) -> QueryBuilder:
         return self.function("smooth_exponential", self, smoothing_factor)
 
-    def clamp(self, minimum, maximum):
+    def clamp(self, minimum: ScalarInput, maximum: ScalarInput) -> QueryBuilder:
         return self.function("clamp", self, minimum, maximum)
 
-    def clamp_min(self, minimum):
+    def clamp_min(self, minimum: ScalarInput) -> QueryBuilder:
         return self.function("clamp_min", self, minimum)
 
-    def clamp_max(self, maximum):
+    def clamp_max(self, maximum: ScalarInput) -> QueryBuilder:
         return self.function("clamp_max", self, maximum)
 
-    def round(self, nearest=None, *, to_nearest=None):
+    def round(
+        self, nearest: Optional[ScalarInput] = None, *, to_nearest: Optional[ScalarInput] = None
+    ) -> QueryBuilder:
         if nearest is not None and to_nearest is not None:
             raise TypeError("pass either nearest or to_nearest, not both")
         nearest = to_nearest if nearest is None else nearest
@@ -193,10 +199,10 @@ class FunctionMixin:
 
     @prom_only
     @prom_experimental
-    def min_of(self, other):
+    def min_of(self, other: QueryInput) -> QueryBuilder:
         return self.function("min_of", self, other)
 
     @prom_only
     @prom_experimental
-    def max_of(self, other):
+    def max_of(self, other: QueryInput) -> QueryBuilder:
         return self.function("max_of", self, other)

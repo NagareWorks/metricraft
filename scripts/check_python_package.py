@@ -100,6 +100,8 @@ def main():
     parser.add_argument("dist", type=Path)
     parser.add_argument("--native-library", type=Path)
     parser.add_argument("--require-bundled-native", action="store_true")
+    parser.add_argument("--typing", action="store_true",
+                        help="Check installed public types (requires mypy in this interpreter)")
     args = parser.parse_args()
     dist = args.dist.resolve()
     wheels = list(dist.glob("metricraft-*.whl"))
@@ -122,6 +124,7 @@ def main():
         assert "metricraft/client/_base.py" not in names
         assert "metricraft/config/prometheus.py" in names
         assert "metricraft/builder/query_builder.py" in names
+        assert "metricraft/py.typed" in names
         assert "metricraft/builder/aggregation.py" in names
         for module in ("templates", "transforms", "extended_rollups"):
             assert "metricraft/builder/" + module + ".py" in names
@@ -156,6 +159,16 @@ from metricraft import _native
 import metricraft
 assert Path(_native.lib._name).resolve().parent == Path(metricraft.__file__).resolve().parent / 'native'
 ''' + BUILDER_SMOKE], env=env, cwd=work, check=True)
+            # Run the downloadable examples exactly as a wheel user would, with
+            # neither the repository nor a developer's native path on sys.path.
+            for name in ("01_configurable_query", "02_saved_query", "03_language_extensions"):
+                example = work / (name + ".py")
+                example.write_bytes((root / "docs/examples" / name / "main.py").read_bytes())
+                subprocess.run([str(python), "-I", "-B", str(example)],
+                               env=env, cwd=work, check=True)
+        if args.typing:
+            from check_python_typing import check
+            check(python, work, env)
         if args.native_library:
             env["METRICRAFT_NATIVE_LIB"] = str(args.native_library.resolve())
             subprocess.run([str(python), "-I", "-B", "-c", BUILDER_SMOKE],

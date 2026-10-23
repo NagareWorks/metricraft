@@ -8,14 +8,19 @@ Requires Python 3.8+. We recommend [uv](https://docs.astral.sh/uv/) to manage
 your project's dependencies and environment:
 
 ```sh
-uv add metricraft==0.3.0rc1
+uv add metricraft
 ```
 
 Or use pip:
 
 ```sh
-python -m pip install metricraft==0.3.0rc1
+python -m pip install metricraft
 ```
+
+Matching wheels support Windows x86_64, Linux x86_64 with glibc 2.28+, and
+macOS 11+ on Intel or Apple Silicon. They require no Rust toolchain or source
+checkout. See the [installation guide](https://nagareworks.github.io/metricraft/getting-started/)
+for a virtual environment setup and an offline first query.
 
 Query construction uses the Rust library bundled in platform wheels. Source
 installations compile the included Rust sources and require Rust and a platform C linker.

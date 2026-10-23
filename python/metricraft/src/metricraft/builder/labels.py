@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Tuple
 
+from ._types import ScalarInput, StringInput
 from .capabilities import vm_only
 
 if TYPE_CHECKING:
@@ -23,26 +24,34 @@ class LabelMixin:
 
     __slots__ = ()
 
-    def label_replace(self, destination, replacement, source, regex):
+    def label_replace(
+        self,
+        destination: StringInput,
+        replacement: StringInput,
+        source: StringInput,
+        regex: StringInput,
+    ) -> QueryBuilder:
         return self.function(
             "label_replace", self, destination, replacement, source, regex
         )
 
-    def label_join(self, destination, separator, *sources):
+    def label_join(
+        self, destination: StringInput, separator: StringInput, *sources: StringInput
+    ) -> QueryBuilder:
         return self.function("label_join", self, destination, separator, *sources)
 
     @vm_only
-    def label_set(self, **labels):
+    def label_set(self, **labels: StringInput) -> QueryBuilder:
         return self.function(
             "label_set", self, *(part for item in labels.items() for part in item)
         )
 
     @vm_only
-    def label_del(self, *labels):
+    def label_del(self, *labels: StringInput) -> QueryBuilder:
         return self.function("label_del", self, *labels)
 
     @vm_only
-    def label_keep(self, *labels):
+    def label_keep(self, *labels: StringInput) -> QueryBuilder:
         return self.function("label_keep", self, *labels)
 
     @vm_only
@@ -56,54 +65,54 @@ class LabelMixin:
         return self.function("label_move", self, *_flatten_pairs(pairs))
 
     @vm_only
-    def label_map(self, label: str, *pairs: Tuple[str, str]) -> QueryBuilder:
+    def label_map(self, label: StringInput, *pairs: Tuple[str, str]) -> QueryBuilder:
         """Map exact label values with (source value, destination value) pairs."""
         return self.function("label_map", self, label, *_flatten_pairs(pairs))
 
     @vm_only
-    def label_lowercase(self, *labels: str) -> QueryBuilder:
+    def label_lowercase(self, *labels: StringInput) -> QueryBuilder:
         return self.function("label_lowercase", self, *labels)
 
     @vm_only
-    def label_uppercase(self, *labels: str) -> QueryBuilder:
+    def label_uppercase(self, *labels: StringInput) -> QueryBuilder:
         return self.function("label_uppercase", self, *labels)
 
     @vm_only
-    def label_match(self, label: str, regex: str) -> QueryBuilder:
+    def label_match(self, label: StringInput, regex: StringInput) -> QueryBuilder:
         """Keep series whose label value matches the anchored backend regex."""
         return self.function("label_match", self, label, regex)
 
     @vm_only
-    def label_mismatch(self, label: str, regex: str) -> QueryBuilder:
+    def label_mismatch(self, label: StringInput, regex: StringInput) -> QueryBuilder:
         return self.function("label_mismatch", self, label, regex)
 
     @vm_only
-    def label_transform(self, label: str, regex: str, replacement: str) -> QueryBuilder:
+    def label_transform(self, label: StringInput, regex: StringInput, replacement: StringInput) -> QueryBuilder:
         """Replace every regex match within a label value on the backend."""
         return self.function("label_transform", self, label, regex, replacement)
 
     @vm_only
-    def label_value(self, label: str) -> QueryBuilder:
+    def label_value(self, label: StringInput) -> QueryBuilder:
         """Use a numeric label as the sample value; invalid values yield no samples."""
         return self.function("label_value", self, label)
 
     @vm_only
-    def labels_equal(self, first: str, second: str, *others: str) -> QueryBuilder:
+    def labels_equal(self, first: StringInput, second: StringInput, *others: StringInput) -> QueryBuilder:
         return self.function("labels_equal", self, first, second, *others)
 
     @vm_only
-    def label_graphite_group(self, *groups: int) -> QueryBuilder:
+    def label_graphite_group(self, *groups: ScalarInput) -> QueryBuilder:
         """Select zero-based dot-separated metric-name components."""
         return self.function("label_graphite_group", self, *groups)
 
     @vm_only
-    def drop_common_labels(self, *others: QueryBuilder) -> QueryBuilder:
+    def drop_common_labels(self, *others: ScalarInput) -> QueryBuilder:
         return self.function("drop_common_labels", self, *others)
 
     @vm_only
-    def alias(self, name):
+    def alias(self, name: StringInput) -> QueryBuilder:
         return self.function("alias", self, name)
 
     @vm_only
-    def keep_metric_names(self):
+    def keep_metric_names(self) -> QueryBuilder:
         return self._unary("keep_metric_names")

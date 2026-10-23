@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Sequence, Union
 
 from .types import TimeValue
 
@@ -12,8 +12,8 @@ class MetricsInsertData:
     """Metric samples submitted through the VictoriaMetrics ingestion endpoint."""
 
     query: str
-    times: List[TimeValue]
-    values: List[Union[int, float, str]]
+    times: Sequence[TimeValue]
+    values: Sequence[Union[int, float, str]]
 
     def validate(self) -> None:
         """Validate insert data structure."""
@@ -26,6 +26,6 @@ class MetricsInsertData:
         if len(self.times) != len(self.values):
             raise ValueError("times and values must have same length")
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate insert data on creation."""
         self.validate()

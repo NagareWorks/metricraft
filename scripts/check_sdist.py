@@ -29,7 +29,8 @@ def main():
             root = names[0].split("/")[0]
             for required in ("Cargo.toml", "Cargo.lock", "setup.py", "_build_native.py",
                              "crates/metricraft-core/src/lib.rs",
-                             "crates/metricraft-ffi/src/lib.rs", "metricraft-source.json"):
+                             "crates/metricraft-ffi/src/lib.rs", "metricraft-source.json",
+                             "python/metricraft/src/metricraft/py.typed"):
                 assert root + "/" + required in names, "sdist is missing " + required
             assert not any("/_legacy/" in name or "/target/" in name or "/.git/" in name
                            or name.endswith((".dll", ".so", ".dylib")) for name in names)

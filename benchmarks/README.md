@@ -11,7 +11,7 @@ python scripts/run_benchmarks.py --output /path/outside/checkout/new-run --memor
 The runner builds the release library, selects it explicitly and runs:
 
 - Pure Rust and Python/ctypes timings for equivalent selector/rate/aggregation shapes.
-- Historical Python comparisons, including shared selectors and 1, 8 and 32 labels.
+- Current SDK construction, rendering and shared-selector reuse with 1, 8 and 32 labels.
 - Synthetic error-rate, histogram-quantile and 16-query configurable dashboard workloads.
 - Native allocation accounting, retained Python owners and concurrent build/error/release probes.
 
@@ -36,22 +36,22 @@ end-to-end latency or backend result equivalence.
 
 ## Individual timing probes
 
-`compare_immutable.py` compares the current Rust-backed facade with the historical
-Python builder for the same selector/rate/aggregation workloads. It measures
+`python_timings.py` measures the current Rust-backed facade for
+selector/rate/aggregation workloads. It measures
 construction plus release, repeated rendering, construction/render/release, and
 branching from a shared selector at 1, 8 and 32 labels. There is no HTTP I/O.
 
 ```sh
 cargo build --release --workspace --locked
 # Set METRICRAFT_NATIVE_LIB to that release build's metricraft_ffi library.
-python benchmarks/compare_immutable.py --iterations 300 --rounds 5 --output /path/to/timings.json
+python benchmarks/python_timings.py --iterations 300 --rounds 5 --output /path/to/timings.json
 ```
 
 GC stays enabled. Each result records round-level median/min/max time per operation,
 Python/platform information, native binary hash, revision and source hashes
-(including new files). Both render paths validate; the new core performs more checks
-during construction, so per-phase ratios are not equal-work comparisons. The complete
-construction/render/release workload is the primary comparison.
+(including new files). Validation stays enabled. The unified suite reports the
+equivalent pure Rust shape separately, making Python facade and FFI overhead visible.
+Compare runs using their recorded revision, machine and workload settings.
 
 These are local microbenchmarks, not an application speedup or latency guarantee.
 The original application flame graph is unavailable. Use the synthetic workloads
@@ -85,6 +85,3 @@ These probes run through the same unified benchmark Action. The Python samples
 include measurement records and allocator caches. They are not native allocation
 counts; RSS need not return to its initial value after objects are released.
 See [memory behavior and measured results](../docs/memory.md).
-
-`python_baseline_timings.py` is the historical benchmark and does not define the
-acceptance criteria for this migration.

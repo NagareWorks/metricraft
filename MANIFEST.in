@@ -5,5 +5,4 @@ include Cargo.toml Cargo.lock metricraft-source.json
 include python/metricraft/README.md
 recursive-include python/metricraft/src *.py py.typed
 recursive-include crates *.toml *.rs *.h
-prune python/metricraft/src/metricraft/_legacy
 global-exclude __pycache__ *.py[cod]

@@ -50,7 +50,8 @@ python scripts/dev.py conformance
 
 `query` runs workspace contracts for immutable expressions, literals, dialects,
 modifiers and client-only imports. `client` runs mocked HTTP tests. `tests` runs
-the complete unified Python collection, including source-only migration fixtures.
+the complete current SDK Python collection. Migration contracts contain API names
+and executable witnesses against the Rust builder; no old implementation is retained.
 Obsolete provider-discovery tests were retired with that API; direct client
 construction and named configuration are covered instead. `check` combines Rust,
 the complete Python suite and offline examples. Test commands do not generate
@@ -96,7 +97,7 @@ tag. Python package versions are explicit in `pyproject.toml`; release tags must
 match them exactly.
 After building distributions, run `python scripts/check_python_package.py <dist>`
 to verify the installed SDK without source imports or native code. This also
-checks that historical fixtures and provider entry points are not shipped.
+checks that retired modules and provider entry points are not shipped.
 Use `--require-bundled-native` to additionally verify the packaged Rust builder.
 
 ## Documentation website
@@ -123,7 +124,7 @@ access; adding a collaborator does not automatically add a release reviewer.
 
 `Benchmarks` uses `python scripts/run_benchmarks.py --output <external-directory>`
 on Linux and Windows for relevant pull requests, branch pushes and manual runs.
-It compares pure Rust, ctypes and historical Python, then runs synthetic application
+It measures pure Rust and the current Python/ctypes facade, then runs synthetic application
 workloads and memory/lifetime probes. Timings are reported for review; failed
 correctness or release checks fail the workflow. See the
 [benchmark guide](benchmarks/README.md) for reproduction and artifact details.
@@ -156,7 +157,6 @@ are retained for 14 days. The sdist includes the Python SDK, Rust sources and Ca
 lockfile. CI rebuilds and installs it outside the checkout with a fresh native
 build directory. Source installations require Rust and a platform C linker;
 missing toolchains fail installation instead of installing an unusable builder.
-Historical Python AST fixtures remain source-checkout only.
 
 `Release` reuses the complete CI workflow at the selected commit, then publishes
 the already-tested artifacts without rebuilding them. A pushed `v*` tag triggers

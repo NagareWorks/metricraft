@@ -1,8 +1,6 @@
 import pytest
 
 from metricraft import QueryBuilder
-from metricraft._legacy.enums import MatchType
-from metricraft._legacy.exceptions import VMValidationError, VMInvalidExpressionError
 
 
 def test_from_metric_and_where_eq():

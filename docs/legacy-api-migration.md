@@ -1,6 +1,6 @@
 # Historical builder migration ledger
 
-Snapshot: 2026-10-08. The historical `_legacy/builder/{impl,mixins}` surface has
+Snapshot: 2026-10-08. The historical builder surface had
 173 method/operator names: 159 expression-producing entries, seven build/diagnostic
 entries, and seven explicitly retired entries. Every retained name has a native
 witness. This is a functional surface audit, not a claim of source compatibility,
@@ -8,11 +8,12 @@ backend equivalence, full language coverage or production performance acceptance
 
 The executable disposition is [migration.py](../tests/conformance/migration.py).
 The [migration contract tests](../tests/test_migration_contract.py) compare its
-entries with the historical definitions, exercise calling conventions and verify
+entries with the frozen [method-name inventory](../tests/conformance/builder_api.json),
+exercise calling conventions and verify
 diagnostic limits. The upstream parser corpus consumes the same expression
 witnesses. A string literal is checked inside a function because recording rules
-require numeric/vector output. Historical tests importing `_legacy` remain
-comparison fixtures; their passing count does not establish native coverage.
+require numeric/vector output. The old implementation and its implementation-specific
+tests have been removed; all executable witnesses exercise the current Rust builder.
 
 ## Compatibility rules
 

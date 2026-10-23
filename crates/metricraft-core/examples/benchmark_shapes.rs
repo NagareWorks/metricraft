@@ -1,4 +1,4 @@
-//! Pure Rust counterpart of compare_immutable.py; all times include validation.
+//! Pure Rust counterpart of python_timings.py; all times include validation.
 use metricraft_core::expression::{Expr, Mode};
 use std::{hint::black_box, time::Instant};
 

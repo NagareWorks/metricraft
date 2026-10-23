@@ -17,7 +17,6 @@ sys.path[:0] = [
     str(ROOT / "python/metricraft/src"),
 ]
 from metricraft import QueryBuilder as Native
-from metricraft._legacy.builder import MetricsBuilder as Legacy
 
 
 def construct(builder, size):
@@ -81,37 +80,34 @@ def main():
         "python": sys.version,
         "iterations": args.iterations,
         "rounds": args.rounds,
-        "note": "Microbenchmarks with GC enabled. Both render paths validate. No HTTP, memory profiling, or production speedup claim.",
+        "note": "Current SDK microbenchmarks with GC and validation enabled. No HTTP, memory profiling, or production speedup claim.",
         "workloads": {},
     }
     for size in (1, 8, 32):
-        workloads = {}
-        for name, builder in (("legacy_python", Legacy), ("rust_via_ctypes", Native)):
-            built = construct(builder, size)
-            base = builder.from_metric("http_requests_total")
-            rendered = built.build()
-            for i in range(size):
-                assert 'label_{}="value_{}"'.format(i, i) in rendered
-            assert "rate(" in rendered and "job" in rendered
-            workloads[name] = {
-                "construct_and_release": measure(
-                    lambda: construct(builder, size), args.iterations, args.rounds
-                ),
-                "render_existing": measure(built.build, args.iterations, args.rounds),
-                "construct_render_release": measure(
-                    lambda: construct(builder, size).build(),
-                    args.iterations,
-                    args.rounds,
-                ),
-                "branch_from_shared_selector": measure(
-                    lambda: base.where_eq("job", "api").rate("5m").build(),
-                    args.iterations,
-                    args.rounds,
-                ),
-                "rendered_example": rendered,
-            }
-            assert base.build() == "http_requests_total"
-        result["workloads"][str(size) + "_labels"] = workloads
+        built = construct(Native, size)
+        base = Native.from_metric("http_requests_total")
+        rendered = built.build()
+        for i in range(size):
+            assert 'label_{}="value_{}"'.format(i, i) in rendered
+        assert "rate(" in rendered and "job" in rendered
+        result["workloads"][str(size) + "_labels"] = {
+            "construct_and_release": measure(
+                lambda: construct(Native, size), args.iterations, args.rounds
+            ),
+            "render_existing": measure(built.build, args.iterations, args.rounds),
+            "construct_render_release": measure(
+                lambda: construct(Native, size).build(),
+                args.iterations,
+                args.rounds,
+            ),
+            "branch_from_shared_selector": measure(
+                lambda: base.where_eq("job", "api").rate("5m").build(),
+                args.iterations,
+                args.rounds,
+            ),
+            "rendered_example": rendered,
+        }
+        assert base.build() == "http_requests_total"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     for size, workloads in result["workloads"].items():
@@ -120,11 +116,8 @@ def main():
             "render_existing",
             "construct_render_release",
         ):
-            old = workloads["legacy_python"][phase]["median_us"]
-            new = workloads["rust_via_ctypes"][phase]["median_us"]
-            print(
-                f"{size:10} {phase:25} legacy={old:9.2f}us native={new:9.2f}us ratio={old/new:.2f}x"
-            )
+            timing = workloads[phase]["median_us"]
+            print(f"{size:10} {phase:25} native={timing:9.2f}us")
 
 
 if __name__ == "__main__":

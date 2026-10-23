@@ -57,16 +57,22 @@ Client-only use requires no native library.
 
 ## Start here
 
-Install the first native release candidate with Python 3.8+:
+Requires Python 3.8+. We recommend [uv](https://docs.astral.sh/uv/) to manage
+your project's dependencies and environment:
+
+```sh
+uv add metricraft==0.3.0rc1
+```
+
+Or use pip:
 
 ```sh
 python -m pip install metricraft==0.3.0rc1
 ```
 
-Wheels include the Rust core for Linux x86_64, Windows x86_64, macOS Intel and
-Apple Silicon. No Rust toolchain is needed when a matching wheel is available.
+This is a release candidate. Matching wheels include the Rust core.
 See [getting started](https://nagareworks.github.io/metricraft/getting-started/)
-for platform requirements and [contributing](CONTRIBUTING.md) for source setup.
+for examples and [contributing](CONTRIBUTING.md) for source setup.
 
 ## One builder, two dialects
 

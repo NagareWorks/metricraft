@@ -75,7 +75,6 @@ license-files = ["LICENSE", "NOTICE"]
 [tool.setuptools.packages.find]
 where = ["python/metricraft/src"]
 include = ["metricraft", "metricraft.*"]
-exclude = ["metricraft._legacy", "metricraft._legacy.*"]
 
 [tool.setuptools.package-dir]
 "" = "python/metricraft/src"
@@ -144,8 +143,6 @@ omit = [
     "test_*.py",
     "run_tests.py",
     "comprehensive_demo.py",
-    # Source-only migration fixtures
-    "*/metricraft/_legacy/*",
 ]
 
 [tool.coverage.report]

@@ -30,10 +30,9 @@ def parameters(args):
 def main():
     classes = {}
     for path in sorted(SOURCE.rglob("*.py")):
-        if "_legacy" not in path.parts:
-            for node in ast.parse(path.read_text(encoding="utf-8")).body:
-                if isinstance(node, ast.ClassDef):
-                    classes[node.name] = (node, path)
+        for node in ast.parse(path.read_text(encoding="utf-8")).body:
+            if isinstance(node, ast.ClassDef):
+                classes[node.name] = (node, path)
 
     def methods(name):
         node, path = classes[name]

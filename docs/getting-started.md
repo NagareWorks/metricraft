@@ -4,39 +4,22 @@ MetriCraft is a Python SDK for constructing PromQL and MetricsQL and querying
 Prometheus or VictoriaMetrics. Rust owns the immutable expression tree;
 Python provides the fluent API and an independent HTTP client.
 
-## Install the release candidate
+## Install from PyPI
 
-With Python 3.8+, install the first native release candidate from PyPI:
+Requires Python 3.8+. We recommend [uv](https://docs.astral.sh/uv/) to manage
+your project's dependencies and environment:
+
+```sh
+uv add metricraft==0.3.0rc1
+```
+
+Or use pip:
 
 ```sh
 python -m pip install metricraft==0.3.0rc1
 ```
 
-Matching wheels include the Rust core and need no Rust toolchain. This is a
-prerelease; pin the version explicitly while evaluating it in your application.
-
-## Install from source
-
-For development, use Python 3.8+ and a Rust toolchain:
-
-```sh
-git clone https://github.com/NagareWorks/metricraft.git
-cd metricraft
-python -m pip install -e ".[dev]"
-python scripts/dev.py build
-python scripts/dev.py smoke
-```
-
-The editable install compiles the native library; `build` also prepares the
-workspace library for development checks. `smoke` runs offline examples, so no metrics
-server is needed. Native wheels are built and tested in CI for Linux x86_64,
-Windows x86_64, macOS Intel and Apple Silicon.
-
-The source distribution includes the Rust sources and locked Cargo dependencies.
-Installing it requires Rust (`cargo` and `rustc`) and a C linker for your platform.
-If a compatible wheel is available, pip uses it without requiring a Rust toolchain.
-The release wheels target glibc 2.28+ on Linux x86_64, Windows x86_64 and macOS 11+
-on Intel and Apple Silicon. Other platforms currently require a source build.
+This is a release candidate. Matching wheels include the Rust core.
 
 ## Compose a query
 
@@ -81,8 +64,3 @@ close transports, or `async with` for asynchronous calls.
 - [Query your backend](client-guide.md) for configuration and async usage.
 - [From UI selections](examples/01_configurable_query/README.md) for an offline application example.
 - [Language support](language-support.md) for version baselines and feature flags.
-
-If the builder reports that its native library is missing, run `python
-scripts/dev.py build` from the checkout. When using a custom build directory,
-set `METRICRAFT_NATIVE_LIB` to the resulting shared library. Client-only imports
-do not require this step.

@@ -22,7 +22,6 @@ def main():
                    str(args.grafana_checkout.resolve() / "python")]
     from promql_builder.builders import promql as g
     from metricraft import QueryBuilder as n
-    from metricraft._legacy.builder import MetricsBuilder as p
     from metricraft import DatabaseClient, VMSingleConfig
     from metricraft.config.http_options import HttpClientOptions
 
@@ -31,28 +30,24 @@ def main():
 
     result = {"grafana_revision": revision(args.grafana_checkout),
               "metricraft_base_revision": revision(ROOT),
-              "note": "Public immutable Rust builder compared with Grafana and the historical Python fixture.",
+              "note": "Public immutable Rust builder compared with Grafana.",
               "cases": {}}
     cases = {
         "rate_sum": [lambda: g.sum(g.rate(g.vector("requests_total").range("5m"))).by(["job"]),
-                     lambda: p.from_metric("requests_total").rate("5m").sum().by("job"),
                      lambda: n.from_metric("requests_total").rate("5m").sum().by("job")],
-        "scalar": [lambda: g.n(42), lambda: p.from_scalar(42), lambda: n.from_scalar(42)],
+        "scalar": [lambda: g.n(42), lambda: n.from_scalar(42)],
         "filter": [lambda: g.vector("up").label("job", "api"),
-                   lambda: p.from_metric("up").where_eq("job", "api"),
                    lambda: n.from_metric("up").where_eq("job", "api")],
-        "topk": [lambda: g.topk(5, g.vector("up")), lambda: p.from_metric("up").topk(5),
+        "topk": [lambda: g.topk(5, g.vector("up")),
                  lambda: n.from_metric("up").topk(5)],
         "label_replace": [lambda: g.label_replace(g.vector("up"), "dst", "$1", "src", "(.*)"),
-                          lambda: p.from_metric("up").label_replace("dst", "$1", "src", "(.*)"),
                           lambda: n.from_metric("up").label_replace("dst", "$1", "src", "(.*)")],
         "vector_matching": [lambda: g.div(g.vector("a"), g.vector("b")).on(["job"]),
-                            lambda: p.from_metric("a").div(p.from_metric("b")).on("job"),
                             lambda: n.from_metric("a").div(n.from_metric("b")).on("job")],
     }
     for case, makers in cases.items():
         result["cases"][case] = {}
-        for index, (name, make) in enumerate(zip(("grafana", "python_legacy", "rust_native"), makers)):
+        for index, (name, make) in enumerate(zip(("grafana", "rust_native"), makers)):
             try:
                 query = make()
                 built = query.build()
@@ -65,11 +60,10 @@ def main():
     derived = g.sum(base)
     base.label("env", "prod")
     result["shared_base"] = {"grafana": str(derived)}
-    for name, factory in (("python_legacy", p), ("rust_native", n)):
-        base = factory.from_metric("up")
-        derived = base.sum()
-        base.where_eq("env", "prod")
-        result["shared_base"][name] = derived.build()
+    base = n.from_metric("up")
+    derived = base.sum()
+    base.where_eq("env", "prod")
+    result["shared_base"]["rust_native"] = derived.build()
 
     class RecordingTransport:
         def __init__(self):
@@ -85,10 +79,10 @@ def main():
     transport = RecordingTransport()
     config = VMSingleConfig("http://example.invalid", http_options=HttpClientOptions(client=transport))
     with DatabaseClient(config) as client:
-        for query in (str(cases["rate_sum"][0]()), cases["rate_sum"][1](), cases["rate_sum"][2]()):
+        for query in (str(cases["rate_sum"][0]()), cases["rate_sum"][1]()):
             response = client.query_range(query, start=0, end=300, step="30s")
             assert response.is_success
-    assert len(transport.calls) == 3
+    assert len(transport.calls) == 2
     assert all(isinstance(call["params"]["query"], str) for call in transport.calls)
     result["client_requests"] = transport.calls
     content = json.dumps(result, ensure_ascii=False, indent=2)

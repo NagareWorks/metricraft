@@ -184,6 +184,12 @@ Every built wheel contains the native library and has a platform tag. The built
 wheels are also installed into isolated Python 3.14 and 3.15 environments on all
 four platforms, without requiring a source checkout or a Rust toolchain.
 
+Free-threaded Python 3.14t and 3.15t run the complete Python suite with
+`PYTHON_GIL=0` and `METRICRAFT_REQUIRE_FREE_THREADED=1`. Session guards fail if the
+interpreter is not a free-threaded build or the GIL is enabled. The same wheel
+installation matrix includes both free-threaded runtimes; its subprocesses
+explicitly keep the GIL disabled even under Python's isolated mode.
+
 Artifacts are named `metricraft-dist-<platform>` and `metricraft-dist-sdist` and
 are retained for 14 days. The sdist includes the Python SDK, Rust sources and Cargo
 lockfile. CI rebuilds and installs it outside the checkout with a fresh native

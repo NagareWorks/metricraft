@@ -104,6 +104,8 @@ python scripts/check_python_typing.py /path/to/metricraft.whl
 
 发布后四个平台都会从公共 PyPI 下载 wheel，比较其 SHA-256 与已测试产物，并再次运行隔离安装检查。上传成功本身不代表发布完成。
 
+自由线程 Python 3.14t 和 3.15t 通过 `PYTHON_GIL=0` 和 `METRICRAFT_REQUIRE_FREE_THREADED=1` 运行完整 Python 测试。会话检查会拒绝非自由线程解释器或启用了 GIL 的进程。wheel 安装矩阵也覆盖这两种运行时，子进程即使使用 Python 隔离模式也会显式保持 GIL 关闭。
+
 <a id="submit-a-change"></a>
 
 ## 提交改动

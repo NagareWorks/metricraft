@@ -46,9 +46,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+        python: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15', '3.14t', '3.15t']
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    env:
+      METRICRAFT_REQUIRE_FREE_THREADED: ${{ endsWith(matrix.python, 't') && '1' || '0' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -63,9 +65,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: python -m pip install -e ".[dev]"
       - name: Complete Python regression
+        env:
+          PYTHON_GIL: ${{ endsWith(matrix.python, 't') && '0' || '1' }}
         run: python scripts/dev.py tests
       - name: Offline examples
         if: always()
+        env:
+          PYTHON_GIL: ${{ endsWith(matrix.python, 't') && '0' || '1' }}
         run: python scripts/dev.py smoke
 
   conformance:

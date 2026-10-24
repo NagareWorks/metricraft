@@ -3,6 +3,8 @@ import argparse
 import os
 from pathlib import Path
 import subprocess
+import sys
+import sysconfig
 import tempfile
 import venv
 import zipfile
@@ -100,9 +102,18 @@ def main():
     parser.add_argument("dist", type=Path)
     parser.add_argument("--native-library", type=Path)
     parser.add_argument("--require-bundled-native", action="store_true")
+    parser.add_argument("--require-free-threaded", action="store_true",
+                        help="Require a free-threaded interpreter and keep the GIL disabled")
     parser.add_argument("--typing", action="store_true",
                         help="Check installed public types (requires mypy in this interpreter)")
     args = parser.parse_args()
+    guard = ""
+    if args.require_free_threaded:
+        if sysconfig.get_config_var("Py_GIL_DISABLED") != 1 or getattr(sys, "_is_gil_enabled", lambda: True)():
+            raise SystemExit("This check requires free-threaded CPython with the GIL disabled")
+        guard = ('\nimport sys, sysconfig\n'
+                 'assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1\n'
+                 'assert not sys._is_gil_enabled(), "Installed SDK enabled the GIL"\n')
     dist = args.dist.resolve()
     wheels = list(dist.glob("metricraft-*.whl"))
     if len(wheels) != 1:
@@ -142,36 +153,41 @@ def main():
         work = Path(work)
         venv.EnvBuilder(with_pip=True).create(work / "venv")
         python = work / "venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        python_command = [str(python), "-I", "-B"]
+        if args.require_free_threaded:
+            # Isolated mode ignores PYTHON_GIL, so set the mode explicitly.
+            python_command += ["-X", "gil=0"]
         env = os.environ.copy()
         env.pop("PYTHONPATH", None)
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         env["METRICRAFT_NATIVE_LIB"] = str(work / "missing-native-library")
         subprocess.run([str(python), "-I", "-m", "pip", "install", "--no-deps", "--no-index", str(wheel)],
                        env=env, cwd=work, check=True)
-        subprocess.run([str(python), "-I", "-B", "-c", SMOKE], env=env, cwd=work, check=True)
+        subprocess.run(python_command + ["-c", guard + SMOKE + guard], env=env, cwd=work, check=True)
         if args.require_bundled_native:
             env.pop("METRICRAFT_NATIVE_LIB", None)
             env.pop("CARGO_TARGET_DIR", None)
-            subprocess.run([str(python), "-I", "-B", "-c", '''
+            subprocess.run(python_command + ["-c", guard + '''
 from pathlib import Path
 from metricraft import QueryBuilder as Q
 from metricraft import _native
 import metricraft
 assert Path(_native.lib._name).resolve().parent == Path(metricraft.__file__).resolve().parent / 'native'
-''' + BUILDER_SMOKE], env=env, cwd=work, check=True)
+''' + BUILDER_SMOKE + guard], env=env, cwd=work, check=True)
             # Run the downloadable examples exactly as a wheel user would, with
             # neither the repository nor a developer's native path on sys.path.
             for name in ("01_configurable_query", "02_saved_query", "03_language_extensions"):
                 example = work / (name + ".py")
                 example.write_bytes((root / "docs/examples" / name / "main.py").read_bytes())
-                subprocess.run([str(python), "-I", "-B", str(example)],
+                code = guard + "\nimport runpy\nrunpy.run_path(" + repr(str(example)) + ", run_name='__main__')\n" + guard
+                subprocess.run(python_command + ["-c", code],
                                env=env, cwd=work, check=True)
         if args.typing:
             from check_python_typing import check
             check(python, work, env)
         if args.native_library:
             env["METRICRAFT_NATIVE_LIB"] = str(args.native_library.resolve())
-            subprocess.run([str(python), "-I", "-B", "-c", BUILDER_SMOKE],
+            subprocess.run(python_command + ["-c", guard + BUILDER_SMOKE + guard],
                            env=env, cwd=work, check=True)
 
 

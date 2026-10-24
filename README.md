@@ -70,7 +70,7 @@ Or use pip:
 python -m pip install metricraft
 ```
 
-This is a release candidate. Matching wheels include the Rust core, so no Rust
+Matching wheels include the Rust core, so no Rust
 toolchain or source checkout is needed on supported platforms.
 See [getting started](https://nagareworks.github.io/metricraft/getting-started/)
 for examples and [contributing](CONTRIBUTING.md) for source setup.

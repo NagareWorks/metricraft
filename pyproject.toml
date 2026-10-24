@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "metricraft"
-version = "0.3.0rc1"
+version = "0.3.0"
 description = "Immutable PromQL/MetricsQL builder and Prometheus/VictoriaMetrics HTTP client"
 readme = "python/metricraft/README.md"
 license = {text = "Apache-2.0"}

@@ -102,7 +102,7 @@
   "Parser checks and expected results from real backends.": "解析器检查，以及真实后端的预期结果验证。",
   "Open source, in the open": "开放协作，开源共享",
   "A query is a good place to start.": "从一条查询开始。",
-  "Native wheels are now available on PyPI. Install the release candidate, try an example, and help shape what comes next.": "PyPI 已提供包含原生库的 wheel。安装候选版本，运行示例，一起完善后续版本。",
+  "Native wheels are available on PyPI. Install MetriCraft, try an example, and help shape what comes next.": "PyPI 已提供包含原生库的 wheel。安装 MetriCraft，运行示例，一起完善后续版本。",
   "Find us on GitHub ↗": "在 GitHub 找到我们 ↗",
   "Local workspace": "本地工作区",
   "Rust builder · browser sample data": "Rust 构建器 · 浏览器示例数据",

@@ -6,7 +6,7 @@
 
 ## Python 类型提示
 
-下一个版本将包含内联类型提示和供类型检查器、编辑器使用的 `py.typed` 标记。这些改动已进入主线，但尚未包含在已发布的 `0.3.0rc1` wheel 中。
+MetriCraft 0.3.0 包含内联类型提示和供类型检查器、编辑器使用的 `py.typed` 标记。
 
 链式调用、Python 运算符以及带方言标记的方法返回 `QueryBuilder`，`build()` 返回 `str`。客户端调用返回 `MetricsQueryResult` 或对应元数据结果，异步等待后的类型也相同。安装包 CI 会验证这些约定，并确保 mypy 和 Pyright 拒绝无效参数类型。
 

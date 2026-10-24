@@ -27,6 +27,9 @@ Activate it with `.venv\Scripts\Activate.ps1` in Windows PowerShell, or
 python -m pip install metricraft
 ```
 
+The regression suite covers CPython 3.8–3.15 with the GIL enabled. Python 3.14
+and 3.15 also run isolated installed-wheel checks on every precompiled platform.
+
 This is a release candidate. Matching wheels include the Rust core: you do not
 need Rust, Cargo, a compiler, or a clone of this repository to use them.
 With uv, run the Python examples using `uv run python` in place of `python`.

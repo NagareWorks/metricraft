@@ -171,7 +171,7 @@ belongs outside the checkout. A configured workflow is not execution evidence.
 
 `CI` runs on pushes to development/release branches, pull requests and manual
 dispatch. It checks workflow syntax and Rust formatting, tests Python 3.8 through
-3.13, and runs the pinned PromQL/MetricsQL parser corpus. Set branch protection's
+3.15, and runs the pinned PromQL/MetricsQL parser corpus. Set branch protection's
 required status to `required-checks`; failures, cancellations and skipped required
 jobs all prevent success.
 
@@ -180,7 +180,9 @@ Linux x86_64, Windows x86_64, macOS Intel and macOS Apple Silicon. Linux builds 
 inside manylinux_2_28 and pass `auditwheel repair`. Each wheel contains one native
 library and its source SHA; validation checks platform metadata, RECORD hashes,
 client-only usage and installed native query construction without source fallbacks.
-Every built wheel contains the native library and has a platform tag.
+Every built wheel contains the native library and has a platform tag. The built
+wheels are also installed into isolated Python 3.14 and 3.15 environments on all
+four platforms, without requiring a source checkout or a Rust toolchain.
 
 Artifacts are named `metricraft-dist-<platform>` and `metricraft-dist-sdist` and
 are retained for 14 days. The sdist includes the Python SDK, Rust sources and Cargo

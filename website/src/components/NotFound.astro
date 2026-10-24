@@ -1,0 +1,39 @@
+---
+import Shell from "../layouts/Shell.astro";
+import { href as localizedHref } from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
+interface Props {
+  locale?: Locale;
+  legacy?: boolean;
+}
+const { locale = "en", legacy = false } = Astro.props;
+const t = translator(locale);
+const href = (slug = "") => localizedHref(slug, locale);
+---
+
+<Shell
+  current="404"
+  locale={locale}
+  legacy={legacy}
+  title={t("Page not found")}
+  description={t("Find your way back to the MetriCraft documentation.")}
+  noindex
+>
+  <main id="content" class="not-found">
+    <span class="eyebrow">{t("404 / An empty result")}</span><h1>
+      {t("This path has")}<br />{t("no matching page.")}
+    </h1><p>
+      {
+        t(
+          "The page may have moved. Search the documentation or start with the guide.",
+        )
+      }
+    </p><div class="hero-ctas">
+      <a class="button primary" href={href("getting-started")}
+        >{t("Open the guide \u2192")}</a
+      ><button class="button secondary" data-search-open
+        >{t("Search docs")}</button
+      >
+    </div>
+  </main>
+</Shell>

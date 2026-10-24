@@ -1,20 +1,27 @@
 ---
 import "../styles/playground.css";
-import { href } from "../data/navigation.mjs";
+import { href as localizedHref } from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const t = translator(locale);
+const href = (slug = "") => localizedHref(slug, locale);
 ---
 
 <div class="playground" data-pagefind-ignore>
   <div class="lab-banner">
-    <span class="status-dot"></span> Local workspace <span
-      >Rust builder · browser sample data</span
-    >
+    <span class="status-dot"></span>
+    {t("Local workspace")}
+    <span>{t("Rust builder · browser sample data")}</span>
   </div>
   <div class="lab-grid">
     <form id="query-controls" class="lab-panel">
       <div class="lab-panel-heading">
-        <span class="lab-number">01</span><h2>Configure a query</h2>
+        <span class="lab-number">01</span><h2>{t("Configure a query")}</h2>
       </div>
-      <label for="lab-metric">Metric</label><input
+      <label for="lab-metric">{t("Metric")}</label><input
         id="lab-metric"
         value="http_requests_total"
         list="lab-metrics"
@@ -22,36 +29,44 @@ import { href } from "../data/navigation.mjs";
         maxlength="256"
       /><datalist id="lab-metrics"></datalist>
       <div class="lab-section-heading">
-        <h3>Label filters</h3><button
+        <h3>{t("Label filters")}</h3><button
           type="button"
           id="add-filter"
-          class="text-button">+ Add filter</button
+          class="text-button">{t("+ Add filter")}</button
         >
       </div>
       <div id="filter-rows"></div>
       <p class="lab-hint">
-        Use <code>=~</code> to match a regex or <code>!~</code> to exclude it. Patterns
-        match the whole label: try <code>api-.*</code> on <code>instance</code>.
+        {t("Use")}
+        <code>=~</code>
+        {t("to match a regex or")}
+        <code>!~</code>
+        {t("to exclude it. Patterns match the whole label: try")}
+        <code>api-.*</code>
+        {t("on")}
+        <code>instance</code>{locale === "zh" ? "。" : "."}
       </p>
       <button type="button" id="try-regex" class="text-button"
-        >Try regex filters</button
+        >{t("Try regex filters")}</button
       >
       <datalist id="lab-labels"></datalist><datalist id="lab-values"></datalist>
       <div class="lab-pair">
         <div>
-          <label for="lab-rollup">Over time</label><select id="lab-rollup"
-            ><option value="none">Latest sample</option><option
+          <label for="lab-rollup">{t("Over time")}</label><select
+            id="lab-rollup"
+            ><option value="none">{t("Latest sample")}</option><option
               value="rate"
-              selected>Counter rate / second</option
-            ><option value="increase">Counter increase</option><option
-              value="avg_over_time">Average</option
-            ><option value="min_over_time">Minimum</option><option
-              value="max_over_time">Maximum</option
-            ><option value="sum_over_time">Sum of samples</option></select
+              selected>{t("Counter rate / second")}</option
+            ><option value="increase">{t("Counter increase")}</option><option
+              value="avg_over_time">{t("Average")}</option
+            ><option value="min_over_time">{t("Minimum")}</option><option
+              value="max_over_time">{t("Maximum")}</option
+            ><option value="sum_over_time">{t("Sum of samples")}</option
+            ></select
           >
         </div>
         <div>
-          <label for="lab-window">Window (seconds)</label><input
+          <label for="lab-window">{t("Window (seconds)")}</label><input
             id="lab-window"
             type="number"
             min="1"
@@ -62,25 +77,29 @@ import { href } from "../data/navigation.mjs";
           />
         </div>
       </div>
-      <label for="lab-aggregate">Across series</label><select id="lab-aggregate"
-        ><option value="none">Keep individual series</option><option
+      <label for="lab-aggregate">{t("Across series")}</label><select
+        id="lab-aggregate"
+        ><option value="none">{t("Keep individual series")}</option><option
           value="sum"
-          selected>Sum</option
-        ><option value="avg">Average</option><option value="min">Minimum</option
-        ><option value="max">Maximum</option><option value="count"
-          >Count series</option
+          selected>{t("Sum")}</option
+        ><option value="avg">{t("Average")}</option><option value="min"
+          >{t("Minimum")}</option
+        ><option value="max">{t("Maximum")}</option><option value="count"
+          >{t("Count series")}</option
         ></select
       >
       <div class="lab-pair">
         <div>
-          <label for="lab-grouping">Grouping</label><select id="lab-grouping"
-            ><option value="none">All series together</option><option
+          <label for="lab-grouping">{t("Grouping")}</label><select
+            id="lab-grouping"
+            ><option value="none">{t("All series together")}</option><option
               value="by"
-              selected>By labels</option
-            ><option value="without">Without labels</option></select
+              selected>{t("By labels")}</option
+            ><option value="without">{t("Without labels")}</option></select
           >
         </div><div>
-          <label for="lab-group-labels">Labels (comma separated)</label><input
+          <label for="lab-group-labels">{t("Labels (comma separated)")}</label
+          ><input
             id="lab-group-labels"
             value="service"
             placeholder="service, environment"
@@ -91,24 +110,25 @@ import { href } from "../data/navigation.mjs";
       </div>
       <div class="lab-pair">
         <div>
-          <label for="lab-arithmetic">Arithmetic</label><select
+          <label for="lab-arithmetic">{t("Arithmetic")}</label><select
             id="lab-arithmetic"
           >
-            <option value="none">Keep values</option>
-            <option value="+">+ Add</option><option value="-">− Subtract</option
+            <option value="none">{t("Keep values")}</option>
+            <option value="+">{t("+ Add")}</option><option value="-"
+              >{t("− Subtract")}</option
             >
-            <option value="*">× Multiply</option><option value="/"
-              >÷ Divide</option
+            <option value="*">{t("× Multiply")}</option><option value="/"
+              >{t("÷ Divide")}</option
             >
-            <option value="%">% Remainder</option><option value="**"
-              >** Power</option
+            <option value="%">{t("% Remainder")}</option><option value="**"
+              >{t("** Power")}</option
             >
-            <option value="negate">− Negate</option><option value="positive"
-              >+ Unary plus</option
+            <option value="negate">{t("− Negate")}</option><option
+              value="positive">{t("+ Unary plus")}</option
             >
           </select>
         </div><div>
-          <label for="lab-operand">Scalar value</label><input
+          <label for="lab-operand">{t("Scalar value")}</label><input
             id="lab-operand"
             type="number"
             step="any"
@@ -117,33 +137,36 @@ import { href } from "../data/navigation.mjs";
           />
         </div>
       </div>
-      <label for="lab-scalar-side">Operand order</label><select
+      <label for="lab-scalar-side">{t("Operand order")}</label><select
         id="lab-scalar-side"
       >
-        <option value="right">Expression first</option><option value="left"
-          >Scalar first</option
+        <option value="right">{t("Expression first")}</option><option
+          value="left">{t("Scalar first")}</option
         >
       </select>
       <p class="lab-hint">
-        Python operators build a new expression. For example, <code
-          >expression * 100</code
-        > or <code>expression &gt; 5</code>. Python <code>**</code> becomes PromQL
-        <code>^</code>.
+        {t("Python operators build a new expression. For example,")}
+        <code>expression * 100</code>
+        {t("or")}
+        <code>expression &gt; 5</code>{t(". Python")}
+        <code>**</code>
+        {t("becomes PromQL")}
+        <code>^</code>{locale === "zh" ? "。" : "."}
       </p>
       <div class="lab-pair">
         <div>
-          <label for="lab-comparison">Value filter</label><select
+          <label for="lab-comparison">{t("Value filter")}</label><select
             id="lab-comparison"
-            ><option value="none">No threshold</option><option value=">"
-              >Greater than</option
-            ><option value=">=">At least</option><option value="<"
-              >Less than</option
-            ><option value="<=">At most</option><option value="=="
-              >Equal to</option
-            ><option value="!=">Not equal to</option></select
+            ><option value="none">{t("No threshold")}</option><option value=">"
+              >{t("Greater than")}</option
+            ><option value=">=">{t("At least")}</option><option value="<"
+              >{t("Less than")}</option
+            ><option value="<=">{t("At most")}</option><option value="=="
+              >{t("Equal to")}</option
+            ><option value="!=">{t("Not equal to")}</option></select
           >
         </div><div>
-          <label for="lab-threshold">Threshold</label><input
+          <label for="lab-threshold">{t("Threshold")}</label><input
             id="lab-threshold"
             type="number"
             step="any"
@@ -154,158 +177,197 @@ import { href } from "../data/navigation.mjs";
       </div>
       <p id="lab-error" class="lab-error" role="alert"></p>
       <button id="run-query" class="lab-primary" type="submit" disabled
-        >Loading Rust builder…</button
+        >{t("Loading Rust builder…")}</button
       >
       <p class="lab-hint">
-        Filters and grouping compose immutable expressions. Your samples stay in
-        this browser.
+        {
+          t(
+            "Filters and grouping compose immutable expressions. Your samples stay in this browser.",
+          )
+        }
       </p>
     </form>
-    <section class="lab-panel lab-code-panel" aria-label="Generated code">
+    <section class="lab-panel lab-code-panel" aria-label={t("Generated code")}>
       <div class="lab-panel-heading">
         <span class="lab-number">02</span><h2>
-          See the calls and the query
-        </h2><span class="lab-live">Live</span>
+          {t("See the calls and the query")}
+        </h2><span class="lab-live">{t("Live")}</span>
       </div>
       <div class="lab-code-heading">
         <h3>MetriCraft · Python</h3><button
           type="button"
           class="text-button"
-          data-copy-lab="python-output">Copy Python</button
+          data-copy-lab="python-output">{t("Copy Python")}</button
         >
       </div>
       <pre
         class="lab-code"
         data-no-copy
         id="python-output"
-        set:text="Loading…"
+        set:text={t("Loading…")}
       />
       <div class="lab-code-heading">
-        <h3>Generated · PromQL</h3><button
+        <h3>{t("Generated · PromQL")}</h3><button
           type="button"
           class="text-button"
-          data-copy-lab="promql-output">Copy PromQL</button
+          data-copy-lab="promql-output">{t("Copy PromQL")}</button
         >
       </div>
       <pre
         class="lab-code lab-query"
         data-no-copy
         id="promql-output"
-        set:text="Loading…"
+        set:text={t("Loading…")}
       />
       <p class="lab-hint">
-        The browser uses the same Rust core as Python. In your application,
-        persist <code>query</code> anywhere, then pass it to <code
-          >client.query()</code
-        > or <code>client.query_range()</code>.
+        {
+          t(
+            "The browser uses the same Rust core as Python. In your application, persist",
+          )
+        }
+        <code>query</code>
+        {t("anywhere, then pass it to")}
+        <code>client.query()</code>
+        {t("or")}
+        <code>client.query_range()</code>{locale === "zh" ? "。" : "."}
       </p>
     </section>
   </div>
   <section class="lab-panel lab-results">
     <div class="lab-panel-heading">
-      <span class="lab-number">03</span><h2>Explore the result</h2><span
+      <span class="lab-number">03</span><h2>{t("Explore the result")}</h2><span
         id="result-status"
-        role="status">Run a query to evaluate your samples.</span
+        role="status">{t("Run a query to evaluate your samples.")}</span
       >
     </div>
     <div class="lab-evaluation">
-      <label for="lab-time">Evaluate at (seconds)</label><input
+      <label for="lab-time">{t("Evaluate at (seconds)")}</label><input
         id="lab-time"
         type="number"
         min="0"
         max="3600"
         step="1"
         value="600"
-      /><span>Chart: 0 → evaluation time, 30-second steps</span>
+      /><span>{t("Chart: 0 → evaluation time, 30-second steps")}</span>
     </div>
-    <div id="result-chart" aria-label="Query result chart"></div>
+    <div id="result-chart" aria-label={t("Query result chart")}></div>
     <div class="lab-table-scroll">
       <table class="lab-result-table">
-        <caption>Instant-vector result at the selected time</caption><thead
-          ><tr><th scope="col">Labels</th><th scope="col">Value</th></tr></thead
+        <caption>{t("Instant-vector result at the selected time")}</caption
+        ><thead
+          ><tr
+            ><th scope="col">{t("Labels")}</th><th scope="col">{t("Value")}</th
+            ></tr
+          ></thead
         ><tbody id="result-rows"></tbody>
       </table>
     </div>
     <p id="result-empty" hidden>
-      No matching samples. Try removing a label filter or threshold, or choose a
-      metric from the dataset.
+      {
+        t(
+          "No matching samples. Try removing a label filter or threshold, or choose a metric from the dataset.",
+        )
+      }
     </p>
   </section>
   <section class="lab-panel lab-dataset">
     <div class="lab-panel-heading">
-      <h2>Your sample data</h2><div class="lab-presets">
-        <button type="button" data-fixture="counter">Counter + reset</button
-        ><button type="button" data-fixture="gauge">Queue depth</button><button
-          type="button"
-          id="add-series">+ Add series</button
-        >
+      <h2>{t("Your sample data")}</h2><div class="lab-presets">
+        <button type="button" data-fixture="counter"
+          >{t("Counter + reset")}</button
+        ><button type="button" data-fixture="gauge">{t("Queue depth")}</button
+        ><button type="button" id="add-series">{t("+ Add series")}</button>
       </div>
     </div>
     <p>
-      Edit labels and values, add your own metrics, or start from a preset.
-      Samples are <code>[seconds, value]</code> relative to time zero. Up to 64 series,
-      241 samples per series, and 0–3600 seconds. Empty label values count as absent.
+      {
+        t(
+          "Edit labels and values, add your own metrics, or start from a preset. Samples are",
+        )
+      }
+      <code>[seconds, value]</code>
+      {
+        t(
+          "relative to time zero. Up to 64 series, 241 samples per series, and 0–3600 seconds. Empty label values count as absent.",
+        )
+      }
     </p>
-    <label for="sample-data">Editable sample dataset · JSON</label><textarea
-      id="sample-data"
-      spellcheck="false"
-      rows="14"></textarea>
+    <label for="sample-data">{t("Editable sample dataset · JSON")}</label
+    ><textarea id="sample-data" spellcheck="false" rows="14"></textarea>
     <p id="dataset-status" role="status"></p>
   </section>
   <details class="lab-scope">
-    <summary>Regex and Python operators</summary>
+    <summary>{t("Regex and Python operators")}</summary>
     <p>
-      Regex patterns match the entire label value: <code>api</code> matches only
-      <code>api</code>, while <code>api.*</code> also matches <code>api-1</code
-      >. Missing labels are matched as empty strings. Lookarounds and
-      backreferences are rejected. The demo uses <a
-        href="https://github.com/le0pard/re2js">RE2JS</a
-      >, with <a
+      {t("Regex patterns match the entire label value:")}
+      <code>api</code>
+      {t("matches only")}
+      <code>api</code>{t(", while")}
+      <code>api.*</code>
+      {t("also matches")}
+      <code>api-1</code>{
+        t(
+          ". Missing labels are matched as empty strings. Lookarounds and backreferences are rejected. The demo uses",
+        )
+      }
+      <a href="https://github.com/le0pard/re2js">RE2JS</a>{t(", with")}
+      <a
         href="https://prometheus.io/docs/prometheus/latest/querying/basics/#instant-vector-selectors"
-        >Prometheus matching semantics</a
+        >{t("Prometheus matching semantics")}</a
       >
-      checked against the pinned backend.
+      {t("checked against the pinned backend.")}
     </p>
     <p>
-      Operators construct new expressions; they do not compare Python objects or
-      modify the original query. Use explicit parentheses. Python <code
-        >and</code
-      >,
-      <code>or</code>, chained comparisons and <code>if expression</code> cannot
-      express query logic. For vector sets, use parenthesized <code>&amp;</code>
+      {
+        t(
+          "Operators construct new expressions; they do not compare Python objects or modify the original query. Use explicit parentheses. Python",
+        )
+      }
+      <code>and</code>,
+      <code>or</code>{t(", chained comparisons and")}
+      <code>if expression</code>
+      {t("cannot express query logic. For vector sets, use parenthesized")}
+      <code>&amp;</code>
       /
-      <code>|</code> or <code>.and_()</code> / <code>.or_()</code>. See <a
-        href={href("reference/api/operators")}>Operators &amp; matching</a
-      >
-      for every supported overload, including vector-to-vector examples.
+      <code>|</code>
+      {t("or")}
+      <code>.and_()</code> / <code>.or_()</code>{t(". See")}
+      <a href={href("reference/api/operators")}>{t("Operators & matching")}</a>
+      {t("for every supported overload, including vector-to-vector examples.")}
     </p>
     <p>
-      Reverse <code>%</code> and <code>**</code> are not overloaded by the SDK, so
-      those choices keep the scalar on the right. Division by zero and other non-finite
-      results appear in the result table and are omitted from the chart.
+      {t("Reverse")}
+      <code>%</code>
+      {t("and")}
+      <code>**</code>
+      {
+        t(
+          "are not overloaded by the SDK, so those choices keep the scalar on the right. Division by zero and other non-finite results appear in the result table and are omitted from the chart.",
+        )
+      }
     </p>
   </details>
   <details class="lab-scope">
-    <summary>What this simulation evaluates</summary><p>
-      This page evaluates the structured selections above, not arbitrary PromQL
-      text. It supports exact and RE2 regex label matchers, finite float
-      samples, a 5-minute instant lookback with an excluded left boundary
-      (Prometheus 3.15), left-open/right-closed ranges, the listed rollups,
-      counter reset handling and rate extrapolation, aggregations, grouping,
-      scalar arithmetic, unary signs and filtering comparisons. Rate/increase
-      model Prometheus behavior. Histograms, stale markers, vector joins,
-      MetricsQL-specific evaluation and server storage behavior are outside this
-      simulator. Use a real backend to validate production results. Sample
-      values are limited to ±1e12 and timestamps to millisecond precision to
-      bound this demo.
+    <summary>{t("What this simulation evaluates")}</summary><p>
+      {
+        t(
+          "This page evaluates the structured selections above, not arbitrary PromQL text. It supports exact and RE2 regex label matchers, finite float samples, a 5-minute instant lookback with an excluded left boundary (Prometheus 3.15), left-open/right-closed ranges, the listed rollups, counter reset handling and rate extrapolation, aggregations, grouping, scalar arithmetic, unary signs and filtering comparisons. Rate/increase model Prometheus behavior. Histograms, stale markers, vector joins, MetricsQL-specific evaluation and server storage behavior are outside this simulator. Use a real backend to validate production results. Sample values are limited to ±1e12 and timestamps to millisecond precision to bound this demo.",
+        )
+      }
     </p><p>
-      The Python snippet can run with an installed MetriCraft native build. The
-      simulator belongs to these docs; it is not a new SDK query engine.
+      {
+        t(
+          "The Python snippet can run with an installed MetriCraft native build. The simulator belongs to these docs; it is not a new SDK query engine.",
+        )
+      }
     </p>
   </details>
   <noscript
-    >This interactive example requires JavaScript and WebAssembly. The guides
-    and API reference remain readable without JavaScript.</noscript
+    >{
+      t(
+        "This interactive example requires JavaScript and WebAssembly. The guides and API reference remain readable without JavaScript.",
+      )
+    }</noscript
   >
 </div>
 <script>

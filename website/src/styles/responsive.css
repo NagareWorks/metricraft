@@ -406,3 +406,23 @@
     color: #000;
   }
 }
+/* Keep the language control visible next to search on narrow screens. */
+.language-switch {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-decoration: none;
+}
+html[lang="zh-CN"] body {
+  font-family:
+    "Manrope", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+html[lang="zh-CN"] .prose {
+  line-height: 1.9;
+}
+html[lang="zh-CN"] .eyebrow {
+  letter-spacing: 0.08em;
+}

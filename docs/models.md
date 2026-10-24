@@ -79,12 +79,12 @@ payload.validate()
 | Constructor parameter | Type | Meaning and constraints |
 | --- | --- | --- |
 | `query` | `str` | Nonempty metric/label text for the VictoriaMetrics import payload; not an expression to evaluate |
-| `times` | `list[TimeValue]` | Nonempty timestamps, one for each value |
-| `values` | `list[int \| float \| str]` | Nonempty numeric values or backend numeric strings, same length as `times` |
+| `times` | `Sequence[TimeValue]` | Nonempty timestamps, one for each value |
+| `values` | `Sequence[int \| float \| str]` | Nonempty numeric values or backend numeric strings, same length as `times` |
 
 Construction and `.validate() -> None` check nonempty fields and equal lengths;
 they do not parse metric text or provide builder injection protection. Invalid
-structure raises `ValueError`. The frozen dataclass still contains ordinary lists.
+structure raises `ValueError`. Freezing the dataclass does not freeze the supplied sequences.
 Send it using `DatabaseClient.insert()` or `insert_async()` with VictoriaMetrics.
 
 ## Time and dialect types

@@ -1,6 +1,11 @@
 ---
 import Navigation from "../components/Navigation.astro";
-import { href, repository } from "../data/navigation.mjs";
+import {
+  href as localizedHref,
+  asset,
+  repository,
+} from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
 import "@fontsource/manrope/latin-400.css";
 import "@fontsource/manrope/latin-500.css";
 import "@fontsource/manrope/latin-600.css";
@@ -8,12 +13,15 @@ import "@fontsource/manrope/latin-700.css";
 import "@fontsource/manrope/latin-800.css";
 import "@fontsource/ibm-plex-mono/latin-400.css";
 import "../styles/site.css";
+import "../styles/diagrams.css";
 interface Props {
   title: string;
   description: string;
   current?: string;
   home?: boolean;
   noindex?: boolean;
+  locale?: Locale;
+  legacy?: boolean;
 }
 const {
   title,
@@ -21,30 +29,83 @@ const {
   current,
   home = false,
   noindex = false,
+  locale = "en",
+  legacy = false,
 } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const href = (slug = "") => localizedHref(slug, locale);
+const t = translator(locale);
+const canonical = new URL(href(current), Astro.site);
+const alternative = locale === "zh" ? "en" : "zh";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale === "zh" ? "zh-CN" : "en"}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>
-      {
-        home
-          ? "MetriCraft — Queries, thoughtfully composed."
-          : `${title} · MetriCraft`
-      }
+      {`${title} · MetriCraft`}
     </title>
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light dark" />
-    {noindex && <meta name="robots" content="noindex" />}
+    {(noindex || legacy) && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={canonical} />
+    {
+      ["en", "zh"].map((language) => (
+        <link
+          rel="alternate"
+          hreflang={language === "zh" ? "zh-CN" : "en"}
+          href={new URL(localizedHref(current, language), Astro.site)}
+        />
+      ))
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(
+        noindex
+          ? asset("404.html")
+          : `${asset()}${current ? `${current}/` : ""}`,
+        Astro.site,
+      )}
+    />
     <meta property="og:title" content={`${title} · MetriCraft`} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href={`${href()}favicon.svg`} />
+    <link rel="icon" type="image/svg+xml" href={asset("favicon.svg")} />
+    <script
+      is:inline
+      define:vars={{
+        legacy,
+        enPath: localizedHref(current, "en"),
+        zhPath: localizedHref(current, "zh"),
+        enRoot: localizedHref("", "en"),
+        zhRoot: localizedHref("", "zh"),
+      }}
+    >
+      if (legacy) {
+        let saved;
+        try {
+          saved = localStorage.getItem("metricraft-language");
+        } catch {}
+        const language = location.pathname.startsWith(zhRoot)
+          ? "zh"
+          : location.pathname.startsWith(enRoot)
+            ? "en"
+            : saved === "en" || saved === "zh"
+              ? saved
+              : /^zh(?:-|$)/i.test(
+                    navigator.languages?.[0] || navigator.language || "",
+                  )
+                ? "zh"
+                : "en";
+        location.replace(
+          (language === "zh" ? zhPath : enPath) +
+            location.search +
+            location.hash,
+        );
+      }
+    </script>
     <script is:inline>
       try {
         const preference = localStorage.getItem("metricraft-theme");
@@ -58,10 +119,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       }
     </script>
   </head>
-  <body class:list={[home && "home"]}>
-    <a class="skip-link" href="#content">Skip to content</a>
+  <body
+    class:list={[home && "home"]}
+    data-pagefind-ignore={legacy || noindex ? "all" : undefined}
+  >
+    <a class="skip-link" href="#content">{t("Skip to content")}</a>
     <header class="site-header">
-      <a class="brand" href={href()} aria-label="MetriCraft home">
+      <a class="brand" href={href()} aria-label={t("MetriCraft home")}>
         <svg viewBox="0 0 40 40" width="32" height="32" aria-hidden="true"
           ><rect width="40" height="40" rx="11" fill="#164c43"></rect><path
             d="M10 28V12l10 9 10-9v16M20 21v7"
@@ -71,28 +135,37 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             stroke-linejoin="round"></path></svg
         >
         MetriCraft<span class="brand-divider">/</span><span class="brand-docs"
-          >docs</span
+          >{t("docs")}</span
         >
       </a>
-      <nav class="header-nav" aria-label="Main">
-        <a href={href("getting-started")}>Guide</a><a
+      <nav class="header-nav" aria-label={t("Main")}>
+        <a href={href("getting-started")}>{t("Guide")}</a><a
           href={href("reference/api")}>Python API</a
-        ><a href={href("playground")}>Playground</a>
+        ><a href={href("playground")}>{t("Playground")}</a>
       </nav>
       <div class="header-actions">
+        <a
+          class="language-switch"
+          data-language-switch={alternative}
+          href={localizedHref(current, alternative)}
+          lang={alternative === "zh" ? "zh-CN" : "en"}
+          hreflang={alternative === "zh" ? "zh-CN" : "en"}
+          aria-label={locale === "zh" ? "Switch to English" : "切换到中文"}
+          >{locale === "zh" ? "English" : "中文"}</a
+        >
         <button
           class="search-trigger"
           data-search-open
-          aria-label="Search documentation"
+          aria-label={t("Search documentation")}
           ><span aria-hidden="true">⌕</span><span class="search-label"
-            >Search docs</span
+            >{t("Search docs")}</span
           ><kbd>⌘ K</kbd></button
         >
         <button
           class="icon-button"
           id="theme-toggle"
-          aria-label="Toggle color theme"
-          title="Toggle color theme"
+          aria-label={t("Toggle color theme")}
+          title={t("Toggle color theme")}
           ><svg
             width="19"
             height="19"
@@ -112,7 +185,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         <button
           class="icon-button mobile-menu"
           id="menu-open"
-          aria-label="Open navigation"
+          aria-label={t("Open navigation")}
           aria-controls="mobile-navigation"
           ><svg
             width="20"
@@ -129,35 +202,37 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <slot />
     <footer class="site-footer">
       <a class="footer-brand" href={href()}>MetriCraft</a><span
-        >Made for the way queries change.</span
+        >{t("Made for the way queries change.")}</span
       ><div>
         <a href={`${repository}/blob/main/LICENSE`}>Apache 2.0</a><a
-          href={href("contributing")}>Contribute</a
+          href={href("contributing")}>{t("Contribute")}</a
         ><a href={repository}>NagareWorks ↗</a>
       </div>
     </footer>
-    <dialog id="mobile-navigation" aria-label="Documentation navigation">
+    <dialog id="mobile-navigation" aria-label={t("Documentation navigation")}>
       <div class="dialog-top">
-        <strong>Explore the docs</strong><button
+        <strong>{t("Explore the docs")}</strong><button
           class="icon-button"
           data-close-dialog
-          aria-label="Close navigation">✕</button
+          aria-label={t("Close navigation")}>✕</button
         >
-      </div><Navigation current={current} />
+      </div><Navigation current={current} locale={locale} />
     </dialog>
     <dialog id="search-dialog" aria-labelledby="search-heading">
       <div class="dialog-top">
-        <h2 id="search-heading">Find your next step</h2><button
+        <h2 id="search-heading">{t("Find your next step")}</h2><button
           class="icon-button"
           data-close-dialog
-          aria-label="Close search">✕</button
+          aria-label={t("Close search")}>✕</button
         >
       </div>
-      <label class="sr-only" for="search-input">Search documentation</label>
+      <label class="sr-only" for="search-input"
+        >{t("Search documentation")}</label
+      >
       <input
         type="search"
         id="search-input"
-        placeholder="Try “grouping”, “async”, or “memory”…"
+        placeholder={t("Try “grouping”, “async”, or “memory”…")}
         autocomplete="off"
       />
       <p
@@ -166,15 +241,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         role="status"
         aria-live="polite"
       >
-        Search guides, examples and the Python API.
+        {t("Search guides, examples and the Python API.")}
       </p>
       <ol id="search-results"></ol>
       <div class="search-footer">
-        <span>Local search · no tracking</span><span
-          ><kbd>esc</kbd> to close</span
+        <span>{t("Local search · no tracking")}</span><span
+          ><kbd>esc</kbd>{" "}{t("to close")}</span
         >
       </div>
     </dialog>
     <script src="../scripts/site.ts"></script>
+    <script src="../scripts/diagrams.ts"></script>
   </body>
 </html>

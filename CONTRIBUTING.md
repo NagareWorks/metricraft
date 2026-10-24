@@ -2,7 +2,8 @@
 
 MetriCraft maintains one repository for the Rust core, C ABI, Python bindings and
 VictoriaMetrics client. Documentation, examples and contribution guidance are
-maintained in English only.
+maintained in English and Chinese. Keep executable examples and API names consistent
+across languages.
 
 ## Set up
 
@@ -35,15 +36,16 @@ Client-only imports must work without any native library.
   expression that a caller can retain or reuse.
 - Put query semantics, validation and rendering in `metricraft-core`. Keep the
   C ABI concerned with conversion, errors and ownership; Python is a fluent facade.
-- Mark MetricsQL-only methods with `@vm_only` and encode the corresponding
+- Mark MetricsQL-only methods with `@vm_only` and PromQL-only methods with
+  `@prom_only`, and encode the corresponding
   restriction in the Rust node. Validate nested nodes for the selected build mode.
   For shared operations with dialect-specific forms, constrain the form only.
 - Treat strings as data, not syntax. Do not add implicit raw-expression fallbacks.
 - Keep client I/O independent from construction. Storage, UI, authorization and
   validation of query text loaded by an application remain outside this SDK.
 
-See [the architecture](docs/architecture.md) for supported operations and migration
-boundaries. Do not expand the old SQL/Flux or provider-based query abstractions.
+See [the architecture](docs/architecture.md) for supported operations and responsibility
+boundaries. Keep the query language scope focused on PromQL and MetricsQL.
 
 ## Validate changes
 
@@ -59,10 +61,9 @@ python scripts/dev.py conformance
 
 `query` runs workspace contracts for immutable expressions, literals, dialects,
 modifiers and client-only imports. `client` runs mocked HTTP tests. `tests` runs
-the complete current SDK Python collection. Migration contracts contain API names
-and executable witnesses against the Rust builder; no old implementation is retained.
-Obsolete provider-discovery tests were retired with that API; direct client
-construction and named configuration are covered instead. `check` combines Rust,
+the complete current SDK Python collection. API contracts use executable witnesses
+against the Rust builder, and cover direct client construction and named configuration.
+`check` combines Rust,
 the complete Python suite and offline examples. Test commands do not generate
 coverage or bytecode files by default.
 
@@ -105,8 +106,7 @@ own. The C ABI is independent of CPython, so wheels use `py3-none` with a platfo
 tag. Python package versions are explicit in `pyproject.toml`; release tags must
 match them exactly.
 After building distributions, run `python scripts/check_python_package.py <dist>`
-to verify the installed SDK without source imports or native code. This also
-checks that retired modules and provider entry points are not shipped.
+to verify client-only use of the installed SDK without source imports or native code.
 Use `--require-bundled-native` to additionally verify the packaged Rust builder.
 Add `--typing` to run the installed-wheel consumer contracts with mypy (Python
 3.11+ for this check). The check runs outside the checkout and verifies fluent
@@ -130,7 +130,9 @@ checks expression kinds, dialect restrictions, feature flags and value ranges.
 
 ## Documentation website
 
-English Markdown in `docs/` is shared with the custom Astro site in `website/`.
+English Markdown in `docs/` and Chinese Markdown in `docs/zh/` are shared with the
+custom Astro site in `website/`. Maintain both languages when adding pages or API
+contracts; translated headings keep the same explicit anchors as their English counterparts.
 Use Node.js 24+ and Python 3.11+ to run `npm ci`, `npm run check` and
 `npm run build` from `website/`. The build generates API signatures from source,
 indexes local search and checks links, fragments and assets. CI includes these

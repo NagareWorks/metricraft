@@ -8,6 +8,9 @@ import {
 import { evaluate } from "./evaluate.ts";
 import { pythonCode } from "./python.ts";
 import { compileMatchers, type LabelPredicate } from "./matchers.ts";
+import { translator } from "../data/translate";
+const locale = document.documentElement.lang.startsWith("zh") ? "zh" : "en";
+const t = translator(locale);
 
 const el = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -28,28 +31,28 @@ function addFilter(label = "", op = "=", value = "") {
   row.className = "lab-filter-row";
   const key = document.createElement("input");
   key.value = label;
-  key.placeholder = "Label";
+  key.placeholder = t("Label");
   key.required = true;
-  key.setAttribute("aria-label", "Filter label");
+  key.setAttribute("aria-label", t("Filter label"));
   key.setAttribute("list", "lab-labels");
   key.maxLength = 256;
   const operator = document.createElement("select");
-  operator.setAttribute("aria-label", "Filter operator");
+  operator.setAttribute("aria-label", t("Filter operator"));
   for (const text of ["=", "!=", "=~", "!~"])
     operator.add(new Option(text, text));
   operator.value = op;
   const literal = document.createElement("input");
   literal.value = value;
-  literal.placeholder = "Value";
-  literal.setAttribute("aria-label", "Filter value");
+  literal.placeholder = t("Value");
+  literal.setAttribute("aria-label", t("Filter value"));
   literal.setAttribute("list", "lab-values");
   literal.maxLength = 256;
   const describeValue = () => {
     const regex = operator.value === "=~" || operator.value === "!~";
-    literal.placeholder = regex ? "Regex, e.g. api-.*" : "Value";
+    literal.placeholder = regex ? t("Regex, e.g. api-.*") : t("Value");
     literal.setAttribute(
       "aria-label",
-      regex ? "Filter regex pattern" : "Filter value",
+      regex ? t("Filter regex pattern") : t("Filter value"),
     );
     if (regex) literal.removeAttribute("list");
     else literal.setAttribute("list", "lab-values");
@@ -59,7 +62,7 @@ function addFilter(label = "", op = "=", value = "") {
   const remove = document.createElement("button");
   remove.type = "button";
   remove.textContent = "×";
-  remove.setAttribute("aria-label", "Remove filter");
+  remove.setAttribute("aria-label", t("Remove filter"));
   remove.addEventListener("click", () => {
     row.remove();
     update();
@@ -73,7 +76,9 @@ function addFilter(label = "", op = "=", value = "") {
 function plan(): Plan {
   if (!form.checkValidity())
     throw new Error(
-      "Complete the filters and use a whole-number window from 1 to 3600 seconds.",
+      t(
+        "Complete the filters and use a whole-number window from 1 to 3600 seconds.",
+      ),
     );
   const aggregate = field("aggregate").value as Plan["aggregate"];
   const grouping =
@@ -119,7 +124,7 @@ function plan(): Plan {
   };
 }
 function clearResults(
-  message = "Selections changed. Run the query to refresh results.",
+  message = t("Selections changed. Run the query to refresh results."),
 ) {
   el("result-status").textContent = message;
   el("result-chart").replaceChildren();
@@ -158,10 +163,12 @@ function update() {
     error.textContent = "";
   } catch (e) {
     error.textContent = String(e);
-    el("python-output").textContent =
-      "Fix the configuration to generate Python.";
-    el("promql-output").textContent =
-      "Fix the configuration to generate PromQL.";
+    el("python-output").textContent = t(
+      "Fix the configuration to generate Python.",
+    );
+    el("promql-output").textContent = t(
+      "Fix the configuration to generate PromQL.",
+    );
   }
   runButton.disabled = !currentPlan || !data;
 }
@@ -170,7 +177,9 @@ function datasetChanged() {
   try {
     data = parseDataset(dataEditor.value);
     el("dataset-status").textContent =
-      `${data.length} series · ${data.reduce((n, s) => n + s.samples.length, 0)} samples · ready to query`;
+      locale === "zh"
+        ? `${data.length} 条序列 · ${data.reduce((n, s) => n + s.samples.length, 0)} 个样本 · 可以查询`
+        : `${data.length} series · ${data.reduce((n, s) => n + s.samples.length, 0)} samples · ready to query`;
     const list = (id: string, values: string[]) =>
       el(id).replaceChildren(
         ...[...new Set(values)].map((v) => new Option(v, v)),
@@ -241,7 +250,10 @@ function drawChart(
   const svg = svgNode("svg", {
     viewBox: "0 0 900 240",
     role: "img",
-    "aria-label": `Simulated query results from 0 to ${end} seconds. Instant values are in the table below.`,
+    "aria-label":
+      locale === "zh"
+        ? `从 0 到 ${end} 秒的模拟查询结果。即时值见下方表格。`
+        : `Simulated query results from 0 to ${end} seconds. Instant values are in the table below.`,
   });
   for (let i = 0; i <= 3; i++) {
     const value = minimum + ((maximum - minimum) * i) / 3;
@@ -313,9 +325,10 @@ function execute() {
   if (!currentPlan || !data) return;
   const timeInput = el<HTMLInputElement>("lab-time");
   if (!timeInput.value || !timeInput.checkValidity()) {
-    error.textContent =
-      "Evaluation time must be an integer from 0 to 3600 seconds.";
-    clearResults("Invalid evaluation time.");
+    error.textContent = t(
+      "Evaluation time must be an integer from 0 to 3600 seconds.",
+    );
+    clearResults(t("Invalid evaluation time."));
     return;
   }
   const time = Number(timeInput.value);
@@ -341,7 +354,9 @@ function execute() {
   el("result-empty").hidden = result.length !== 0;
   drawChart(currentPlan, data, time, matches);
   el("result-status").textContent =
-    `${result.length} result series at ${time}s · simulated locally`;
+    locale === "zh"
+      ? `${time} 秒时有 ${result.length} 条结果序列 · 本地模拟`
+      : `${result.length} result series at ${time}s · simulated locally`;
   error.textContent = "";
 }
 form.addEventListener("input", update);
@@ -377,8 +392,9 @@ document
   );
 el("add-series").addEventListener("click", () => {
   if (!data || data.length >= 64) {
-    el("dataset-status").textContent =
-      "Fix the JSON first, and keep the dataset within 64 series.";
+    el("dataset-status").textContent = t(
+      "Fix the JSON first, and keep the dataset within 64 series.",
+    );
     return;
   }
   const next = {
@@ -407,9 +423,9 @@ document
         await navigator.clipboard.writeText(
           el(button.dataset.copyLab!).textContent || "",
         );
-        button.textContent = "Copied";
+        button.textContent = t("Copied");
       } catch {
-        button.textContent = "Select code to copy";
+        button.textContent = t("Select code to copy");
       }
       setTimeout(() => (button.textContent = original), 1500);
     }),
@@ -425,12 +441,12 @@ async function initialize() {
     );
     await module.default();
     build = module.build_query;
-    runButton.textContent = "Run query →";
+    runButton.textContent = t("Run query →");
     update();
     execute();
   } catch (e) {
-    error.textContent = `The Rust WebAssembly builder could not load. Reload to retry. ${String(e)}`;
-    runButton.textContent = "Builder unavailable";
+    error.textContent = `${t("The Rust WebAssembly builder could not load. Reload to retry.")} ${String(e)}`;
+    runButton.textContent = t("Builder unavailable");
     runButton.disabled = true;
   }
 }

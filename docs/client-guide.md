@@ -3,6 +3,19 @@
 `DatabaseClient` handles synchronous and asynchronous HTTP calls. It can execute
 saved query strings without loading the Rust builder library.
 
+```mermaid
+flowchart TB
+  accTitle: Client configuration, transport and results
+  accDescr: Configuration chooses routing. Sync or async client calls send query text and return a result model after backend evaluation.
+config["Backend configuration"] --> client["DatabaseClient"]
+  query["Query string"] --> client
+  client --> sync["Synchronous request"]
+  client --> async["Asynchronous request"]
+  sync --> server[("Configured backend")]
+  async --> server
+  server --> result["MetricsQueryResult"]
+```
+
 ## Choose an endpoint
 
 ```python

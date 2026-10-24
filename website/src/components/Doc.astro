@@ -1,0 +1,110 @@
+---
+import { getEntry, render } from "astro:content";
+import Shell from "../layouts/Shell.astro";
+import Navigation from "../components/Navigation.astro";
+import ApiIndex from "../components/ApiIndex.astro";
+import ApiDirectory from "../components/ApiDirectory.astro";
+import Playground from "../components/Playground.astro";
+import {
+  pages,
+  localizedPage,
+  href as localizedHref,
+  repository,
+} from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
+const { page, index, legacy = false } = Astro.props;
+const locale = Astro.props.locale as Locale;
+const t = translator(locale);
+const href = (slug = "") => localizedHref(slug, locale);
+const entry = await getEntry("docs", page.source.replace(/\.md$/, ""));
+if (!entry) throw new Error(`Missing documentation: ${page.source}`);
+const { Content, headings } = await render(entry);
+const toc = headings.filter((heading) => heading.depth === 2);
+if ("apiCategory" in page)
+  toc.push({
+    depth: 2,
+    slug: "api-methods",
+    text: t("Methods and parameters"),
+  });
+const previous = pages[index - 1] && localizedPage(pages[index - 1], locale),
+  next = pages[index + 1] && localizedPage(pages[index + 1], locale);
+---
+
+<Shell
+  title={page.title}
+  description={page.description}
+  current={page.slug}
+  locale={locale}
+  legacy={legacy}
+>
+  <div class="docs-layout">
+    <aside class="sidebar">
+      <div class="edition">
+        <span class="status-dot"></span>{t("Development docs")}<span>main</span>
+      </div><Navigation current={page.slug} locale={locale} />
+    </aside>
+    <main id="content" class="doc-main" data-pagefind-body>
+      <div class="eyebrow">{page.group}</div>
+      <h1 data-pagefind-meta="title">{page.title}</h1>
+      <p class="doc-intro">{page.description}</p>
+      <div class="prose">
+        <Content />
+        {page.slug === "reference/api" && <ApiDirectory locale={locale} />}
+        {
+          "apiCategory" in page && (
+            <ApiIndex category={page.apiCategory as string} locale={locale} />
+          )
+        }
+        {page.slug === "playground" && <Playground locale={locale} />}
+      </div>
+      <div class="source-link" data-pagefind-ignore>
+        <a href={`${repository}/blob/main/${page.source}`}
+          >{t("Read this page on GitHub ↗")}</a
+        >
+      </div>
+      <nav
+        class="page-neighbors"
+        aria-label={t("Adjacent pages")}
+        data-pagefind-ignore
+      >
+        {
+          previous ? (
+            <a href={href(previous.slug)}>
+              <span>{t("← Previous")}</span>
+              {previous.title}
+            </a>
+          ) : (
+            <div />
+          )
+        }
+        {
+          next && (
+            <a href={href(next.slug)}>
+              <span>{t("Next →")}</span>
+              {next.title}
+            </a>
+          )
+        }
+      </nav>
+    </main>
+    <aside class="table-of-contents">
+      <span class="eyebrow">{t("On this page")}</span><nav
+        aria-label={t("On this page")}
+      >
+        <ul>
+          {
+            toc.map((heading) => (
+              <li>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav><div class="toc-note">
+        {t("Have a better example?")}<br /><a href={href("contributing")}
+          >{t("Help shape the docs ↗")}</a
+        >
+      </div>
+    </aside>
+  </div>
+</Shell>

@@ -1,0 +1,39 @@
+.prose .diagram {
+  margin: 24px 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.diagram-canvas {
+  overflow-x: auto;
+  padding: 22px 18px;
+}
+.diagram-hint {
+  padding: 10px 16px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.diagram-hint[hidden] {
+  display: none;
+}
+.diagram-canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.diagram-canvas svg {
+  display: block;
+  margin: 0 auto;
+}
+.diagram [data-diagram-source] {
+  display: none;
+}
+.diagram noscript p,
+.diagram-canvas > p {
+  margin: 0;
+  font-size: 13px;
+}
+@media (max-width: 760px) {
+  .diagram-canvas {
+    padding: 16px 12px;
+  }
+}

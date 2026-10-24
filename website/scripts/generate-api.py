@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from api_contracts import contract
 from api_parameters import parameter
+from api_localization import localize
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "python/metricraft/src/metricraft"
@@ -96,6 +97,7 @@ def main():
     destination = ROOT / "website/.generated/api.json"
     destination.parent.mkdir(exist_ok=True)
     destination.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+    destination.with_name("api.zh.json").write_text(json.dumps(localize(output), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Documented {sum(len(c['methods']) for c in output)} API entries; every parameter has an editorial contract.")
 
 

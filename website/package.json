@@ -13,9 +13,9 @@
     "predev": "npm run generate && npm run wasm",
     "dev": "astro dev",
     "precheck": "npm run generate",
-    "check": "prettier --check src astro.config.mjs scripts/remark-docs.mjs package.json && astro check",
-    "prebuild": "npm run generate && npm run wasm && npm test",
-    "build": "astro build && pagefind --site dist && python scripts/check-site.py",
+    "check": "prettier --check src astro.config.mjs scripts/remark-docs.mjs scripts/check-language.mjs package.json && astro check",
+    "prebuild": "npm run generate && npm run wasm && npm test && astro sync --force",
+    "build": "astro build && pagefind --site dist && python scripts/check-site.py && node scripts/check-language.mjs",
     "preview": "astro preview --host 127.0.0.1"
   },
   "dependencies": {
@@ -23,11 +23,13 @@
     "@fontsource/ibm-plex-mono": "^5.2.0",
     "@fontsource/manrope": "^5.2.0",
     "astro": "7.4.2",
+    "mermaid": "12.2.0",
     "pagefind": "1.5.2",
     "re2js": "2.9.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
+    "jsdom": "30.1.3",
     "prettier": "3.6.2",
     "prettier-plugin-astro": "0.14.1",
     "typescript": "5.9.3"

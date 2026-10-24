@@ -1,6 +1,6 @@
 # Documentation website
 
-The English documentation lives in this repository. Astro provides static page
+The English and Chinese documentation live in this repository. Astro provides static page
 generation; the layout and styles are custom. Pagefind indexes the built pages
 for local search. There is no application backend or external search service.
 
@@ -36,9 +36,33 @@ JavaScript SDK and does not add an execution engine to the Python package.
 
 ## Content and design
 
-- Edit Markdown in `../docs/`; the website also reads `CONTRIBUTING.md` and the
-  benchmark guide directly. No second copy of the content is maintained.
+- Edit English Markdown in `../docs/` and Chinese Markdown in `../docs/zh/`.
+  The website also reads `CONTRIBUTING.md` and the benchmark guide directly;
+  their translations are `docs/zh/contributing.md` and `docs/zh/benchmarks.md`.
+  The website does not keep separate copies of these Markdown sources.
 - Register pages and their navigation metadata in `src/data/navigation.mjs`.
+  Add matching Chinese titles/descriptions in `src/data/navigation.zh.json`.
+- Explicit `/en/` and `/zh/` URLs determine the page language. Original URLs
+  remain readable English fallbacks without JavaScript and redirect in the browser
+  using a saved manual preference, otherwise the browser's primary language:
+  `zh` and `zh-*` select Chinese; every other language selects English.
+  The language switcher preserves the page, query string and fragment. Storage
+  is optional; explicit language links work when it is unavailable.
+- Chinese headings have an explicit `<a id="english-anchor"></a>` immediately
+  before them so links work on GitHub as well as on the site. Existing deep links and language
+  switches address the same section. Relative Markdown links resolve to the current
+  language; source-code links still point to the real repository files.
+- Interface translations live in `src/data/ui.zh.json`. Generated API translations
+  live in `scripts/api_purposes_zh.py`, `api_parameters_zh.py` and
+  `api_localization.py`. Missing API translations fail generation. Names,
+  signatures, defaults and executable examples stay identical across languages.
+  Pagefind indexes each explicit language separately; legacy aliases are excluded.
+- Use fenced `mermaid` blocks for relationships and workflows, with `accTitle`
+  and `accDescr` in each language. Keep a short explanation alongside each diagram.
+  The local Mermaid bundle loads only on pages with diagrams, renders in strict
+  mode and follows the color theme. Diagrams can scroll within narrow screens.
+  The build checks both languages with Mermaid's parser, using jsdom only for
+  the parser's label sanitization; it is not shipped to the browser.
 - `scripts/remark-docs.mjs` converts repository-relative links into site links,
   retaining source-file links to GitHub. The page layout supplies the first H1.
 - `scripts/generate-api.py` reads public declarations and requires purpose,

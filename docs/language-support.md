@@ -6,11 +6,32 @@ all 90 PromQL functions and 14 aggregates, and all 195 documented MetricsQL
 functions and 37 aggregates in this baseline. Use fluent methods or
 `Q.function(name, *args)`; both use the same native signature checks.
 
+Support is checked in both directions. The API reference marks MetricsQL-only
+methods as `vm_only` and PromQL-only methods as `prom_only`. For example,
+`histogram_count()` and `histogram_sum()` require PromQL in this baseline and
+are rejected in MetricsQL, including through `Q.function()` or nested expressions.
+Some shared methods also have dialect-specific argument forms; a method without
+an exclusive badge is not a guarantee that every call form works in both languages.
+
 This is a query builder and HTTP client, not a query evaluator or source-code
 parser. Backend calculations, storage, staleness and native-histogram data handling
 belong to the selected server. Existing query strings go directly to the client.
 Numeric/duration input formats are normalized; generated text has no comments or
 trailing commas. No raw-expression insertion API exists.
+
+```mermaid
+flowchart TB
+  accTitle: Bidirectional dialect validation at build time
+  accDescr: The native core checks expression types, dialect-specific methods and call forms, and feature flags before rendering either language.
+expression["Immutable expression"] --> mode{"Choose build dialect"}
+  mode --> prom["PromQL: reject vm_only"]
+  mode --> vm["MetricsQL: reject prom_only"]
+  prom --> checks["Rust checks the entire expression, call forms and feature flags"]
+  vm --> checks
+  checks --> result{"Valid?"}
+  result -->|"Yes"| text["Query string"]
+  result -->|"No"| error["Validation error"]
+```
 
 ## Construction
 

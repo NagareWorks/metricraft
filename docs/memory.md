@@ -1,16 +1,19 @@
 # Immutable expressions and memory
 
-Expression derivation shares immutable children through `Arc`; it does not deep-copy
-the tree. Selector matchers form a persistent linked chain, and binary modifiers
-share their label lists. There are no parent links, mutable arenas, global node
-registries, global string interners or rendered-string caches keeping old queries alive.
-The [Rust Arc contract](https://doc.rust-lang.org/std/sync/struct.Arc.html) defines
-shared ownership and release after the final owner is dropped.
+```mermaid
+flowchart TB
+  accTitle: Query roots share immutable data
+  accDescr: Python owners hold their own roots. Shared selectors remain alive until their last reference is released; retaining a root retains its reachable children.
+ownerA["Python owner A"] --> rootA["New nodes for query A"]
+  ownerB["Python owner B"] --> rootB["New nodes for query B"]
+  rootA --> shared["Shared immutable selector: Arc"]
+  rootB --> shared
+  shared --> matchers["Shared matcher chain"]
+```
 
-Each derived expression still needs its new nodes, literal data and Python owner.
-Keeping every historical root keeps the union of their reachable nodes alive.
-Deleting a parent cannot release children still referenced by a different root.
-This is retained application state, not automatically a leak.
+Derivation adds the required nodes without deep-copying the tree. Each new root, literal and Python owner still has a cost.
+
+Retaining a root retains its reachable children. Shared data is released after its final owner, as defined by the [Arc ownership contract](https://doc.rust-lang.org/std/sync/struct.Arc.html). Retaining many queries is application state, not automatically a leak.
 
 ## Query construction contract
 
@@ -67,7 +70,7 @@ replace the unavailable application trace; they do not establish production late
 
 Read-only graph diagnostics visit unique nodes and matcher links without recreating
 a Python AST. Rendered position diagnostics expand occurrences and use the same
-native build limits. See the [diagnostic contract](legacy-api-migration.md#diagnostics-and-memory).
+native build limits. See the [diagnostic reference](reference/diagnostics.md).
 
 The native allocation probe starts from 256 labels with 128-byte values. Counts
 include requested native allocations and retained root containers, but exclude

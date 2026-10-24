@@ -1,0 +1,136 @@
+{
+  "groups": {
+    "Start here": "从这里开始",
+    "Work with the SDK": "使用 SDK",
+    "Examples": "示例",
+    "Reference": "参考手册",
+    "Under the hood": "深入了解"
+  },
+  "pages": {
+    "getting-started": [
+      "构建第一条查询",
+      "安装 SDK，组合查询，再选择如何执行。"
+    ],
+    "concepts": [
+      "核心概念",
+      "理解不可变表达式、两种查询方言，以及构建与执行的边界。"
+    ],
+    "guides/building-queries": [
+      "构建查询",
+      "从结构化输入组合选择器、时间窗口计算、聚合和向量匹配规则。"
+    ],
+    "guides/client": [
+      "查询后端",
+      "通过同步或异步客户端访问 Prometheus 和 VictoriaMetrics。"
+    ],
+    "guides/configurable-queries": [
+      "接收应用输入",
+      "将应用中的选项映射到允许的操作，并将查询值与语法分开处理。"
+    ],
+    "guides/language-support": [
+      "语言支持",
+      "查看 PromQL、MetricsQL 的支持范围、版本基线和显式功能开关。"
+    ],
+    "playground": [
+      "查询体验区",
+      "选择监控过滤条件，实时查看 Python 与 PromQL，并查询可编辑的示例数据。"
+    ],
+    "examples/structured-selections": [
+      "从界面选项构建查询",
+      "将经过校验的应用选项转换成可复用的查询字符串。"
+    ],
+    "examples/saved-queries": [
+      "先保存，再查询",
+      "由应用保存查询文本，稍后通过客户端执行。"
+    ],
+    "examples/language-extensions": [
+      "使用语言扩展",
+      "尝试显式功能开关、标签操作和具有作用域的 MetricsQL 模板。"
+    ],
+    "reference/api": [
+      "Python API",
+      "按分类查找构建器、客户端和配置方法；签名直接来自源码。"
+    ],
+    "reference/models": [
+      "模型与公共类型",
+      "了解结果字段、写入数据、时间值、配置注册辅助函数和异常。"
+    ],
+    "internals/architecture": [
+      "架构",
+      "共享的 Rust 表达式树、精简的 C ABI，以及独立的 Python HTTP 客户端。"
+    ],
+    "internals/memory": [
+      "共享与内存",
+      "理解共享所有权、构建预算、保留的表达式根节点与内存测量。"
+    ],
+    "internals/benchmarks": [
+      "性能测量",
+      "使用统一测试套件复现构建、渲染、FFI 和内存测量。"
+    ],
+    "internals/backend-validation": [
+      "后端验证",
+      "将生成的查询交给真实后端执行，并核对明确的预期结果。"
+    ],
+    "internals/comparison": [
+      "与 Grafana 对比",
+      "比较查询构建方式、客户端能力及各自的职责。"
+    ],
+    "contributing": ["参与贡献", "搭建开发环境、验证改动，并了解贡献流程。"],
+    "reference/api/construction": [
+      "创建表达式",
+      "从指标、标签、标量、字符串和函数调用开始构建。"
+    ],
+    "reference/api/selectors": [
+      "选择器与过滤",
+      "通过标签匹配器选择时间序列，并组合 MetricsQL 选择器分支。"
+    ],
+    "reference/api/aggregation": [
+      "聚合与分组",
+      "跨序列计算聚合结果，设置分组标签、分位数和输出限制。"
+    ],
+    "reference/api/operators": [
+      "运算符与匹配",
+      "组合算术、比较和集合运算，并设置向量匹配规则。"
+    ],
+    "reference/api/time": [
+      "时间与范围",
+      "设置回看窗口、子查询、偏移、固定求值时间和时间函数。"
+    ],
+    "reference/api/rollups": [
+      "时间窗口计算",
+      "在每条序列的回看窗口内计算速率、变化量和统计值。"
+    ],
+    "reference/api/metricsql-rollups": [
+      "MetricsQL 窗口扩展",
+      "使用 MetricsQL 特有的窗口统计、阈值计算和组合 rollup。"
+    ],
+    "reference/api/functions": [
+      "函数",
+      "使用数学函数、直方图函数、排序和时间转换。"
+    ],
+    "reference/api/labels": [
+      "标签操作",
+      "设置、复制、移动、过滤或转换结果标签。"
+    ],
+    "reference/api/transforms": [
+      "MetricsQL 转换",
+      "处理查询区间内的缺失值、异常值、累计统计和序列转换。"
+    ],
+    "reference/api/templates": [
+      "模板与作用域",
+      "通过 MetricsQL WITH 绑定、名称引用和函数模板复用表达式。"
+    ],
+    "reference/api/diagnostics": [
+      "构建与诊断",
+      "渲染查询、限制输出预算，并检查原生表达式图。"
+    ],
+    "reference/api/client": [
+      "HTTP 客户端",
+      "执行即时查询、范围查询、元数据请求和 VictoriaMetrics 写入。"
+    ],
+    "reference/api/configuration": [
+      "连接与传输配置",
+      "配置后端地址、集群租户、超时、请求头和自定义传输。"
+    ]
+  }
+}

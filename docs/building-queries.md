@@ -1,5 +1,19 @@
 # Build queries
 
+```mermaid
+flowchart TB
+  accTitle: From metric to query text
+  accDescr: Select a metric and labels, apply a time-window function, aggregate series, and render a chosen dialect.
+select["from_metric: choose a metric"] --> filter["where_*: select labels"]
+  filter --> rollup["rate / avg_over_time: window function"]
+  rollup --> aggregate["sum / avg: aggregate series"]
+  aggregate --> group["by / without: group"]
+  group --> build["build: validate dialect and render"]
+```
+
+The request-rate example below follows this pipeline. Each step returns a new expression.
+
+
 ## Start with a value
 
 ```python

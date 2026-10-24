@@ -1,14 +1,32 @@
 ---
 import api from "../../.generated/api.json";
 import categories from "../data/api-categories.json";
-import { href } from "../data/navigation.mjs";
+import {
+  href as localizedHref,
+  localizedPage,
+  pages,
+} from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const t = translator(locale);
+const href = (slug = "") => localizedHref(slug, locale);
+const localizedCategories = categories.map((category) => ({
+  ...category,
+  ...localizedPage(
+    pages.find((page) => page.slug === `reference/api/${category.id}`),
+    locale,
+  ),
+}));
 ---
 
 <section id="signature-index">
-  <h2>Choose an API category</h2>
+  <h2>{t("Choose an API category")}</h2>
   <div class="api-category-grid">
     {
-      categories.map((category) => (
+      localizedCategories.map((category) => (
         <a href={href(`reference/api/${category.id}`)}>
           <>
             <strong>
@@ -21,7 +39,7 @@ import { href } from "../data/navigation.mjs";
                   .flatMap((cls) => cls.methods)
                   .filter((m) => m.category === category.id).length
               }{" "}
-              methods
+              {t("methods")}
             </small>
           </>
         </a>
@@ -29,12 +47,12 @@ import { href } from "../data/navigation.mjs";
     }
   </div>
   <details class="api-directory">
-    <summary>Find a method across all categories</summary>
+    <summary>{t("Find a method across all categories")}</summary>
     <div class="api-filter">
-      <label for="api-filter">Method name</label><input
+      <label for="api-filter">{t("Method name")}</label><input
         type="search"
         id="api-filter"
-        placeholder="For example: count_gt_over_time"
+        placeholder={t("For example: count_gt_over_time")}
       /><p id="api-status" role="status"></p>
     </div>
     {
@@ -54,7 +72,13 @@ import { href } from "../data/navigation.mjs";
                     href={`${href(`reference/api/${method.category}`)}#${method.id}`}
                   >
                     <code>{method.name}</code>
-                    <span>{method.category}</span>
+                    <span>
+                      {
+                        localizedCategories.find(
+                          (category) => category.id === method.category,
+                        )?.title
+                      }
+                    </span>
                   </a>
                 </li>
               ))}

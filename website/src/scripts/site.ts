@@ -1,9 +1,38 @@
+import { translator } from "../data/translate";
 const root = document.documentElement;
+const locale = root.lang.startsWith("zh") ? "zh" : "en";
+const t = translator(locale);
+document
+  .querySelectorAll<HTMLAnchorElement>("[data-language-switch]")
+  .forEach((link) => {
+    const updateTarget = () => {
+      const target = new URL(link.href);
+      target.search = location.search;
+      target.hash = location.hash;
+      link.href = target.href;
+    };
+    updateTarget();
+    window.addEventListener("hashchange", updateTarget);
+    window.addEventListener("popstate", updateTarget);
+    link.addEventListener("click", () => {
+      updateTarget();
+      try {
+        localStorage.setItem(
+          "metricraft-language",
+          link.dataset.languageSwitch!,
+        );
+      } catch {}
+    });
+  });
 const themeButton = document.querySelector<HTMLButtonElement>("#theme-toggle");
 function themeLabel() {
   themeButton?.setAttribute(
     "aria-label",
-    `Switch to ${root.dataset.theme === "dark" ? "light" : "dark"} theme`,
+    t(
+      root.dataset.theme === "dark"
+        ? "Switch to light theme"
+        : "Switch to dark theme",
+    ),
   );
 }
 themeLabel();
@@ -100,10 +129,10 @@ input.addEventListener("input", () => {
   const query = input.value.trim();
   results.replaceChildren();
   if (!query) {
-    status.textContent = "Search guides, examples and the Python API.";
+    status.textContent = t("Search guides, examples and the Python API.");
     return;
   }
-  status.textContent = "Searching…";
+  status.textContent = t("Searching…");
   timer = setTimeout(async () => {
     try {
       pagefind ??= import(/* @vite-ignore */ `${base}/pagefind/pagefind.js`);
@@ -114,8 +143,10 @@ input.addEventListener("input", () => {
       );
       if (current !== revision) return;
       status.textContent = found.results.length
-        ? `${found.results.length} matching page${found.results.length === 1 ? "" : "s"}.`
-        : "No matching pages. Try a method name or a shorter phrase.";
+        ? locale === "zh"
+          ? `找到 ${found.results.length} 个匹配页面。`
+          : `${found.results.length} matching page${found.results.length === 1 ? "" : "s"}.`
+        : t("No matching pages. Try a method name or a shorter phrase.");
       for (const page of matches) {
         const url = new URL(page.url, location.origin);
         if (
@@ -127,7 +158,7 @@ input.addEventListener("input", () => {
         const link = document.createElement("a");
         link.href = url.href;
         const title = document.createElement("strong");
-        title.textContent = page.meta.title || "MetriCraft documentation";
+        title.textContent = page.meta.title || t("MetriCraft documentation");
         const excerpt = document.createElement("p");
         const parsed = new DOMParser().parseFromString(
           page.excerpt,
@@ -141,8 +172,9 @@ input.addEventListener("input", () => {
     } catch {
       pagefind = undefined;
       if (current === revision)
-        status.textContent =
-          "Search could not load. Please retry, or use the navigation. Local previews need a full site build first.";
+        status.textContent = t(
+          "Search could not load. Please retry, or use the navigation. Local previews need a full site build first.",
+        );
     }
   }, 150);
 });
@@ -180,21 +212,21 @@ document
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-code";
-    button.textContent = "Copy";
-    button.setAttribute("aria-label", "Copy code");
+    button.textContent = t("Copy");
+    button.setAttribute("aria-label", t("Copy code"));
     button.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(code.textContent || "");
-        button.textContent = "Copied";
+        button.textContent = t("Copied");
       } catch {
-        button.textContent = "Select to copy";
+        button.textContent = t("Select to copy");
         const selection = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(code);
         selection?.removeAllRanges();
         selection?.addRange(range);
       }
-      setTimeout(() => (button.textContent = "Copy"), 1800);
+      setTimeout(() => (button.textContent = t("Copy")), 1800);
     });
     wrapper.append(button);
   });
@@ -217,7 +249,10 @@ function filterApi() {
     );
   const status = document.querySelector("#api-status");
   if (status)
-    status.textContent = `${count} matching ${count === 1 ? "entry" : "entries"}`;
+    status.textContent =
+      locale === "zh"
+        ? `${count} 个匹配条目`
+        : `${count} matching ${count === 1 ? "entry" : "entries"}`;
 }
 apiFilter?.addEventListener("input", filterApi);
 if (apiFilter) filterApi();

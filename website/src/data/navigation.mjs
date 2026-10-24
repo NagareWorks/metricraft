@@ -1,4 +1,6 @@
 import apiCategories from "./api-categories.json";
+import chinese from "./navigation.zh.json";
+import { localizedPath, localizedSource } from "./locales.mjs";
 export const repository = "https://github.com/NagareWorks/metricraft";
 export const groups = [
   {
@@ -112,13 +114,6 @@ export const groups = [
         description:
           "Result fields, ingestion data, time values, registry helpers and errors.",
       },
-      {
-        slug: "reference/migration",
-        source: "docs/legacy-api-migration.md",
-        title: "Migrate existing code",
-        description:
-          "Find the current equivalent of historical APIs, including intentional removals.",
-      },
     ],
   },
   {
@@ -153,13 +148,6 @@ export const groups = [
           "Verify generated queries against real backends and explicit expected results.",
       },
       {
-        slug: "internals/rust-migration",
-        source: "docs/rust-migration.md",
-        title: "Rust migration status",
-        description:
-          "The current native architecture, validation evidence and release boundary.",
-      },
-      {
         slug: "internals/comparison",
         source: "docs/api-comparison.md",
         title: "Compared with Grafana",
@@ -179,6 +167,27 @@ export const groups = [
 export const pages = groups.flatMap((group) =>
   group.pages.map((page) => ({ ...page, group: group.title })),
 );
-export function href(slug = "") {
-  return `${import.meta.env.BASE_URL.replace(/\/$/, "")}/${slug ? `${slug}/` : ""}`;
+export function localizedPage(page, locale = "en") {
+  if (locale === "en") return page;
+  const translation = chinese.pages[page.slug];
+  if (!translation) throw new Error(`Missing Chinese navigation: ${page.slug}`);
+  return {
+    ...page,
+    title: translation[0],
+    description: translation[1],
+    source: localizedSource(page.source, locale),
+    group: chinese.groups[page.group] || page.group,
+  };
+}
+export function localizedGroups(locale = "en") {
+  return groups.map((group) => ({
+    title: locale === "zh" ? chinese.groups[group.title] : group.title,
+    pages: group.pages.map((page) => localizedPage(page, locale)),
+  }));
+}
+export function href(slug = "", locale = "en") {
+  return localizedPath(import.meta.env.BASE_URL, slug, locale);
+}
+export function asset(path = "") {
+  return `${import.meta.env.BASE_URL.replace(/\/$/, "")}/${path}`;
 }

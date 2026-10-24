@@ -1,12 +1,17 @@
 ---
-import { groups, href } from "../data/navigation.mjs";
+import { localizedGroups, href as localizedHref } from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
 interface Props {
   current?: string;
+  locale?: Locale;
 }
-const { current } = Astro.props;
+const { current, locale = "en" } = Astro.props;
+const groups = localizedGroups(locale);
+const href = (slug = "") => localizedHref(slug, locale);
+const t = translator(locale);
 ---
 
-<nav aria-label="Documentation">
+<nav aria-label={t("Documentation")}>
   {
     groups.map((group) => (
       <div class="nav-group">
@@ -33,7 +38,7 @@ const { current } = Astro.props;
                             current === page.slug ? "page" : undefined
                           }
                         >
-                          Overview
+                          {t("Overview")}
                         </a>
                       </li>
                       {group.pages

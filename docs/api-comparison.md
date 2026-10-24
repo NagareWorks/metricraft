@@ -1,10 +1,10 @@
 # Calling conventions: Grafana and MetriCraft
 
-The historical comparison used Grafana promql-builder revision
+This comparison uses Grafana promql-builder revision
 [`4febee560d00c40d20b36093ff5e9d5879b4c738`](https://github.com/grafana/promql-builder/tree/4febee560d00c40d20b36093ff5e9d5879b4c738).
 This compares SDKs, not Grafana dashboards or a deployment requirement.
 
-| Concern | Grafana promql-builder | MetriCraft direction and current new path |
+| Concern | Grafana promql-builder | MetriCraft |
 | --- | --- | --- |
 | Composition | Nested function calls plus modifier methods | Fluent immutable expressions |
 | Output | `build()` returns a model; `str(query)` renders text | `build(mode=...)` returns text |
@@ -12,7 +12,6 @@ This compares SDKs, not Grafana dashboards or a deployment requirement.
 | Languages | PromQL | One common core for PromQL and MetricsQL |
 | Execution | Query construction | Separate sync/async Prometheus/VictoriaMetrics client |
 | Dynamic configuration | Application maps selections to calls | Same; application owns persistence and policy |
-| Present coverage | Broader than our early native prototype | Migrated Rust core; pinned PromQL/MetricsQL catalog and syntax checks |
 
 For example, Grafana uses `sum(rate(vector(...).range("5m"))).by(["job"])`;
 MetriCraft uses `Q.from_metric(...).rate("5m").sum().by("job")`.

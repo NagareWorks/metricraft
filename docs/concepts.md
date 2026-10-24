@@ -14,6 +14,16 @@ api = requests.where_eq("job", "api")
 worker = requests.where_eq("job", "worker")
 ```
 
+```mermaid
+flowchart TB
+  accTitle: Derive independent branches from one expression
+  accDescr: API and worker branches share a base selector while retaining their own filters and derived operations.
+base["requests: base selector"] --> api["api: add job=api"]
+  base --> worker["worker: add job=worker"]
+  api --> rate["rate: API request rate"]
+  base -. "Still reusable" .-> next["Other branches"]
+```
+
 Rust nodes share immutable subexpressions through reference counting. A branch
 does not deep-copy the whole tree. Retaining many distinct roots still consumes
 memory: sharing reduces duplication, but is not a limit on application-owned
@@ -23,7 +33,9 @@ queries. See [sharing and memory](memory.md).
 
 There is one `QueryBuilder`. `.build("promql")` and `.build("metricsql")`
 validate the entire expression for the chosen language and render a string.
-MetricsQL-only forms fail when built as PromQL. Experimental Prometheus forms
+MetricsQL-only forms fail when built as PromQL; PromQL-only forms fail when built
+as MetricsQL. The API reference labels both `vm_only` and `prom_only` methods.
+Experimental Prometheus forms
 need explicit build flags and matching server configuration.
 
 The default build mode is MetricsQL. Building the same supported expression for

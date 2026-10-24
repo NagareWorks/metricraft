@@ -100,6 +100,7 @@ results; benchmark and sanitizer reports are separate artifacts.
 - [Benchmarks and memory behavior](benchmarks/README.md)
 - [Comparison with Grafana's query builder](docs/api-comparison.md)
 
-Documentation is maintained in English.
+Documentation is available in [English](https://nagareworks.github.io/metricraft/en/)
+and [中文](https://nagareworks.github.io/metricraft/zh/), with a language switcher.
 [Apache 2.0](LICENSE) · [Contributing](CONTRIBUTING.md) ·
 [Contributors](https://github.com/NagareWorks/metricraft/graphs/contributors)

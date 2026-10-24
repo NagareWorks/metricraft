@@ -1,11 +1,15 @@
 ---
 import api from "../../.generated/api.json";
+import chineseApi from "../../.generated/api.zh.json";
 import { repository } from "../data/navigation.mjs";
+import { translator, type Locale } from "../data/translate";
 interface Props {
   category: string;
+  locale?: Locale;
 }
-const { category } = Astro.props;
-const classes = api
+const { category, locale = "en" } = Astro.props;
+const t = translator(locale);
+const classes = (locale === "zh" ? chineseApi : api)
   .map((cls) => ({
     ...cls,
     methods: cls.methods.filter((method) => method.category === category),
@@ -23,12 +27,12 @@ const signature = (
 ---
 
 <section id="api-methods" class="api-reference">
-  <h2>Methods and parameters</h2>
+  <h2>{t("Methods and parameters")}</h2>
   <div class="api-filter">
-    <label for="api-filter">Find on this page</label><input
+    <label for="api-filter">{t("Find on this page")}</label><input
       id="api-filter"
       type="search"
-      placeholder="Method or parameter name…"
+      placeholder={t("Method or parameter name…")}
     /><p id="api-status" role="status"></p>
   </div>
   {
@@ -53,15 +57,17 @@ const signature = (
                 <span class="api-summary-purpose">{method.purpose}</span>
               </span>
               <span class="api-group">
-                {"vm_only" === method.badges.find((b) => b === "vm_only")
-                  ? "MetricsQL"
-                  : ""}
+                {method.badges.some((badge) => badge === "vm_only")
+                  ? t("MetricsQL only")
+                  : method.badges.some((badge) => badge === "prom_only")
+                    ? t("PromQL only")
+                    : ""}
               </span>
             </summary>
             <div class="api-detail">
               <div class="api-badges">
                 {method.badges.map((badge) => (
-                  <span>{badge.replaceAll("_", " ")}</span>
+                  <span>{t(badge.replaceAll("_", " "))}</span>
                 ))}
               </div>
               <pre
@@ -73,11 +79,11 @@ const signature = (
               {method.parameters.length ? (
                 <div class="api-parameters">
                   <table>
-                    <caption>Parameters</caption>
+                    <caption>{t("Parameters")}</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Parameter / type</th>
-                        <th scope="col">Meaning and accepted values</th>
+                        <th scope="col">{t("Parameter / type")}</th>
+                        <th scope="col">{t("Meaning and accepted values")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -88,10 +94,10 @@ const signature = (
                             <span class="api-type">{p.type}</span>
                             <span class="api-default">
                               {p.default !== null
-                                ? `Default: ${p.default}`
+                                ? `${t("Default:")} ${p.default}`
                                 : p.display.startsWith("*")
-                                  ? "Variadic"
-                                  : "Required"}
+                                  ? t("Variadic")
+                                  : t("Required")}
                             </span>
                           </th>
                           <td>{p.description}</td>
@@ -101,14 +107,14 @@ const signature = (
                   </table>
                 </div>
               ) : (
-                <p class="api-no-params">No parameters.</p>
+                <p class="api-no-params">{t("No parameters.")}</p>
               )}
               <p class="api-return">
-                <strong>Returns</strong> {method.returns}
+                <strong>{t("Returns")}</strong> {method.returns}
               </p>
               {method.example && (
                 <div class="api-example">
-                  <h4>Example</h4>
+                  <h4>{t("Example")}</h4>
                   <pre
                     data-copy-plain
                     set:text={`from metricraft import QueryBuilder as Q\n\n${method.example}`}
@@ -119,9 +125,9 @@ const signature = (
                 <a
                   href={`${repository}/blob/main/${method.source}#L${method.line}`}
                 >
-                  View declaration ↗
+                  {t("View declaration ↗")}
                 </a>
-                <a href={`#${method.id}`}>Link to this method</a>
+                <a href={`#${method.id}`}>{t("Link to this method")}</a>
               </div>
             </div>
           </details>

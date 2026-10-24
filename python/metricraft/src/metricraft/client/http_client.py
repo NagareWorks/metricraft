@@ -8,6 +8,7 @@ Features
 """
 
 import asyncio
+from threading import Lock
 import json
 import logging
 import time
@@ -590,6 +591,7 @@ class AsyncHTTPClient:
         self.sync_client = SyncHTTPClient(timeout=timeout) if sync_client is None else sync_client
         self._executor = executor or ThreadPoolExecutor(max_workers=max_workers)
         self._owns_executor = executor is None
+        self._close_lock = Lock()
         self._closed = False
 
     @staticmethod
@@ -664,9 +666,10 @@ class AsyncHTTPClient:
 
     def close(self) -> None:
         """Release the owned executor and any internally created sync client."""
-        if self._closed:
-            return
-        self._closed = True
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
         if self._owns_sync_client and hasattr(self.sync_client, "close"):
             try:
                 self.sync_client.close()  # type: ignore[attr-defined]

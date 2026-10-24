@@ -58,6 +58,25 @@ If pip reports no matching distribution, check Python's version and architecture
 and your package index. A mirror may not have synchronized the release yet;
 retry with `--index-url https://pypi.org/simple` when appropriate.
 
+### Free-threaded CPython
+
+CPython 3.14t and 3.15t are tested with the GIL disabled, including installed
+wheels. They use the same platform wheel: the bundled Rust library uses a C ABI
+and does not link to CPython's extension ABI. Free threading became an officially
+supported, optional CPython build in [Python 3.14](https://peps.python.org/pep-0779/).
+
+Check the actual running mode; a free-threaded interpreter can also enable the GIL:
+
+```sh
+python -c "import sys, sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED'), sys._is_gil_enabled())"
+```
+
+For free-threaded execution the result is `1 False`. Immutable query expressions
+can be shared between threads. Configure clients before use, finish outstanding
+requests before closing them, and use thread-safe custom transports when sharing
+a client. Concurrent client cleanup releases each owned transport once; it does
+not make user-provided callbacks or mutable configuration thread-safe.
+
 ## Compose a query
 
 ```python

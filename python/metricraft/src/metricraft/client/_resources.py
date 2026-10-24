@@ -1,5 +1,6 @@
 """Ownership and release of the HTTP transports held by one client."""
 import logging
+from threading import Lock
 
 
 _logger = logging.getLogger(__name__)
@@ -21,17 +22,26 @@ class TransportResources:
     Async-only transports require explicit aclose() or an async context manager.
     """
 
-    __slots__ = ("sync", "async_", "closed")
+    __slots__ = ("sync", "async_", "closed", "_close_lock")
 
     def __init__(self):
         self.sync = None
         self.async_ = None
         self.closed = False
+        self._close_lock = Lock()
+
+    def _claim_close(self) -> bool:
+        # Only the state transition is serialized. User callbacks and awaits
+        # run outside the lock, including callbacks that close this owner again.
+        with self._close_lock:
+            if self.closed:
+                return False
+            self.closed = True
+            return True
 
     def close(self) -> None:
-        if self.closed:
+        if not self._claim_close():
             return
-        self.closed = True
         sync = getattr(self, "sync", None)
         async_ = getattr(self, "async_", None)
         if async_ is not sync:
@@ -39,9 +49,8 @@ class TransportResources:
         _close(sync)
 
     async def aclose(self) -> None:
-        if self.closed:
+        if not self._claim_close():
             return
-        self.closed = True
         sync = getattr(self, "sync", None)
         async_ = getattr(self, "async_", None)
         async_closed = False

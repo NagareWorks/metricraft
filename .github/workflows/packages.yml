@@ -112,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.14', '3.15']
+        python: ['3.14', '3.15', '3.14t', '3.15t']
         platform: [linux-x86_64, windows-x86_64, macos-x86_64, macos-arm64]
         include:
           - platform: linux-x86_64
@@ -137,7 +137,11 @@ jobs:
           name: metricraft-dist-${{ matrix.platform }}
           path: artifacts/dist
       - name: Verify isolated wheel installation on the selected Python runtime
-        run: python scripts/check_python_package.py artifacts/dist --require-bundled-native
+        # Installer helpers can use regular Python, including macOS certificate setup.
+        # Force no-GIL execution only after the selected interpreter is installed.
+        env:
+          PYTHON_GIL: ${{ endsWith(matrix.python, 't') && '0' || '1' }}
+        run: python scripts/check_python_package.py artifacts/dist --require-bundled-native ${{ endsWith(matrix.python, 't') && '--require-free-threaded' || '' }}
 
   sdist:
     runs-on: ubuntu-22.04

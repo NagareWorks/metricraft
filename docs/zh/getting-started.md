@@ -49,6 +49,20 @@ python -m pip install --only-binary=:all: metricraft
 
 如果 pip 提示找不到匹配的发行包，请检查 Python 版本、架构和软件包索引。镜像站可能尚未同步发布内容，必要时加上 `--index-url https://pypi.org/simple` 重试。
 
+<a id="free-threaded-cpython"></a>
+
+### 自由线程 CPython
+
+CPython 3.14t 和 3.15t 会在关闭 GIL 时执行测试，包括 wheel 安装验证。它们使用相同的平台 wheel：打包的 Rust 库采用 C ABI，不链接 CPython 扩展 ABI。自由线程从 [Python 3.14](https://peps.python.org/pep-0779/) 起成为官方正式支持的可选构建。
+
+自由线程解释器也可以启用 GIL，因此需要检查实际运行模式：
+
+```sh
+python -c "import sys, sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED'), sys._is_gil_enabled())"
+```
+
+自由线程执行时应输出 `1 False`。不可变查询表达式可以在线程间共享。客户端应在使用前完成配置，等待未完成请求结束后再关闭；共享客户端时，自定义传输也需要支持线程安全。并发关闭客户端会确保每个自有传输只释放一次，但不会让用户回调或可变配置自动变得线程安全。
+
 <a id="compose-a-query"></a>
 
 ## 组合查询

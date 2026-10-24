@@ -94,9 +94,9 @@ python scripts/check_python_typing.py /path/to/metricraft.whl
 
 `Native robustness` 在 Linux 使用 AddressSanitizer/泄漏检测运行 Rust 测试，随后运行有时限的 libFuzzer。它独立于计时，在相关 PR 或手动触发时运行；确定性组合种子也进入普通 Rust 回归测试。共享验证器检查输入不可变性、缓存大小、构建限制和释放路径，不证明后端语义。日志、语料和崩溃输入作为 Actions 产物上传。复现命令见[工作流](../../.github/workflows/robustness.yml)；生成语料和构建输出应放在仓库外。配置好工作流并不等于已执行验证。
 
-`CI` 在开发/发布分支推送、PR 与手动触发时运行，检查工作流语法、Rust 格式，测试 Python 3.8–3.13，并运行固定 PromQL/MetricsQL 解析器测试集。分支保护的必需状态应设为 `required-checks`，所需任务失败、取消或跳过都会阻止成功。
+`CI` 在开发/发布分支推送、PR 与手动触发时运行，检查工作流语法、Rust 格式，测试 Python 3.8–3.15，并运行固定 PromQL/MetricsQL 解析器测试集。分支保护的必需状态应设为 `required-checks`，所需任务失败、取消或跳过都会阻止成功。
 
-可复用 `Packages` 工作流测试 Rust 核心和 ABI，为 Linux x86_64、Windows x86_64、macOS Intel、macOS Apple Silicon 构建 wheel。Linux 在 manylinux_2_28 中构建并执行 `auditwheel repair`。每个 wheel 包含一个原生库及其源码 SHA；验证平台元数据、RECORD 哈希、仅客户端使用和不回退源码的原生查询构建。所有 wheel 都含原生库并带平台标签。
+可复用 `Packages` 工作流测试 Rust 核心和 ABI，为 Linux x86_64、Windows x86_64、macOS Intel、macOS Apple Silicon 构建 wheel。Linux 在 manylinux_2_28 中构建并执行 `auditwheel repair`。每个 wheel 包含一个原生库及其源码 SHA；验证平台元数据、RECORD 哈希、仅客户端使用和不回退源码的原生查询构建。所有 wheel 都含原生库并带平台标签。构建后的 wheel 还会在四个平台的独立 Python 3.14 和 3.15 环境中安装验证，不依赖源码检出或 Rust 工具链。
 
 产物名为 `metricraft-dist-<platform>` 与 `metricraft-dist-sdist`，保留 14 天。sdist 包含 Python SDK、Rust 源码和 Cargo 锁文件。CI 在仓库之外用新的原生构建目录重新构建、安装它。源码安装需要 Rust 和平台 C 链接器，工具链缺失会使安装失败，而不是安装无法使用的构建器。
 

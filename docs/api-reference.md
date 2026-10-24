@@ -6,9 +6,8 @@ package.
 
 ## Python type hints
 
-The next release includes inline type hints and a `py.typed` marker for type
-checkers and editors. These additions are on the main branch and are not included
-in the published `0.3.0rc1` wheel.
+MetriCraft 0.3.0 includes inline type hints and a `py.typed` marker for type
+checkers and editors.
 
 Fluent calls, Python operators and dialect-marked methods return `QueryBuilder`;
 `build()` returns `str`. Client calls return `MetricsQueryResult` or the matching

@@ -26,7 +26,7 @@ from metricraft.exceptions import MetriCraftError, MCHTTPError, TimeoutError, Co
 
 
 # Version information
-__version__ = "0.3.0rc1"
+__version__ = "0.3.0"
 __author__ = "NagareWorks"
 __license__ = "Apache-2.0 © 2025-present NagareWorks"
 __description__ = "PromQL/MetricsQL query builder and HTTP client"

@@ -26,7 +26,7 @@ python -m pip install metricraft
 
 回归测试覆盖启用 GIL 的 CPython 3.8–3.15。Python 3.14 和 3.15 还会在所有提供预编译包的平台上执行独立的 wheel 安装验证。
 
-当前发布的是候选版本。匹配平台的 wheel 已包含 Rust 核心，使用时不需要安装 Rust、Cargo、编译器，也不需要克隆本仓库。使用 uv 时，将下文的 `python` 命令换成 `uv run python`。
+匹配平台的 wheel 已包含 Rust 核心，使用时不需要安装 Rust、Cargo、编译器，也不需要克隆本仓库。使用 uv 时，将下文的 `python` 命令换成 `uv run python`。
 
 <a id="precompiled-platforms"></a>
 

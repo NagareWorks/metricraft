@@ -22,7 +22,7 @@
 | `BuildMode` | `QueryMode`，或字面量 `"promql"` / `"metricsql"` |
 | `MatchInput` | 选择器字符串、`QueryBuilder`，或包含两者的序列，例如列表、元组 |
 
-Python 注解检查参数形式并保留链式返回类型。表达式种类、允许的值、方言和功能开关仍由 Rust 验证。例如，作为标量参数的 `QueryBuilder` 必须在所选语言中表示标量。诊断信息与自定义 HTTP 载荷含动态数据，因此相应字典有意保留 `Any` 值。
+Python 注解检查参数形式并保留链式返回类型。表达式种类、允许的值、方言和功能开关仍由 Rust 验证。例如，作为标量参数的 `QueryBuilder` 必须在所选语言中表示标量。HTTP 适配器的输入使用只读映射，解析后的响应值为 `object`，使用前应缩小类型，详见[传输契约](client-guide.md#replace-the-http-transport)。诊断信息等其他动态数据仍可能包含 `Any` 值。
 
 <a id="reading-the-reference"></a>
 

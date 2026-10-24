@@ -18,13 +18,13 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from metricraft.transports import SyncHTTPTransport, HTTPParams, HTTPBody as HTTPBody
 from metricraft.exceptions import ConnectionError, MCHTTPError, TimeoutError
 
 
 HeadersInput = Optional[Mapping[str, Union[str, int, float]]]
 PrepareRequestHook = Optional[Callable[[Request], Optional[Request]]]
 TimeoutType = Union[float, int, Tuple[Union[float, int], Union[float, int]]]
-HTTPBody = Optional[Union[Dict[str, Any], str, bytes]]
 HTTPMethod = str
 
 
@@ -52,7 +52,7 @@ _DEFAULT_RETRY_METHODS: Set[str] = {
 }
 
 
-def _prepare_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def _prepare_params(params: HTTPParams) -> Dict[str, Any]:
     """Normalize query params for HTTP requests.
 
     Rules
@@ -163,7 +163,7 @@ def _canonicalize_request_headers(request: Request) -> None:
             unredirected[canonical] = str(value)
 
 
-def _apply_params(url: str, params: Optional[Dict[str, Any]]) -> str:
+def _apply_params(url: str, params: Optional[HTTPParams]) -> str:
     if not params:
         return url
 
@@ -235,7 +235,7 @@ class SyncHTTPClient:
         method: HTTPMethod,
         url: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         data: HTTPBody = None,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -262,7 +262,7 @@ class SyncHTTPClient:
         url: str,
         *,
         method: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         headers: HeadersInput = None,
         body: Optional[bytes] = None,
         default_content_type: Optional[str] = None,
@@ -307,7 +307,7 @@ class SyncHTTPClient:
             return data.encode("utf-8"), explicit_content_type or "text/plain"
 
         if isinstance(data, Mapping):
-            return json.dumps(data).encode("utf-8"), explicit_content_type or "application/json"
+            return json.dumps(dict(data)).encode("utf-8"), explicit_content_type or "application/json"
 
         raise TypeError("Unsupported request body type; expected bytes, str, or mapping")
 
@@ -321,7 +321,7 @@ class SyncHTTPClient:
         *,
         method: str,
         url: str,
-        params: Optional[Dict[str, Any]],
+        params: Optional[HTTPParams],
         headers: HeadersInput,
         body: Optional[bytes],
         timeout: Optional[TimeoutType],
@@ -435,7 +435,7 @@ class SyncHTTPClient:
     def get(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -458,7 +458,7 @@ class SyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -478,7 +478,7 @@ class SyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -498,7 +498,7 @@ class SyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -518,7 +518,7 @@ class SyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -537,7 +537,7 @@ class SyncHTTPClient:
     def head(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -553,7 +553,7 @@ class SyncHTTPClient:
     def options(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -585,7 +585,7 @@ class AsyncHTTPClient:
         *,
         max_workers: int = 4,
         executor: Optional[ThreadPoolExecutor] = None,
-        sync_client: Optional[Any] = None,
+        sync_client: Optional[SyncHTTPTransport] = None,
     ):
         self._owns_sync_client = sync_client is None
         self.sync_client = SyncHTTPClient(timeout=timeout) if sync_client is None else sync_client
@@ -606,7 +606,7 @@ class AsyncHTTPClient:
         method: HTTPMethod,
         url: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         data: HTTPBody = None,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -635,12 +635,15 @@ class AsyncHTTPClient:
                     timeout=timeout,
                 )
             if method_upper == "POST" and hasattr(self.sync_client, "post"):
+                # Older duck-typed adapters may omit this optional argument.
+                post_options = {} if content_type is None else {"content_type": content_type}
                 return self.sync_client.post(
                     url,
                     data,
                     params,
                     headers=headers,
                     timeout=timeout,
+                    **post_options,
                 )
             raise AttributeError(
                 "Configured sync_client does not provide a compatible request interface"
@@ -689,7 +692,7 @@ class AsyncHTTPClient:
     async def get(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -712,7 +715,7 @@ class AsyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -732,7 +735,7 @@ class AsyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -752,7 +755,7 @@ class AsyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -772,7 +775,7 @@ class AsyncHTTPClient:
         self,
         url: str,
         data: HTTPBody = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -791,7 +794,7 @@ class AsyncHTTPClient:
     async def head(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,
@@ -807,7 +810,7 @@ class AsyncHTTPClient:
     async def options(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[HTTPParams] = None,
         *,
         headers: HeadersInput = None,
         timeout: Optional[TimeoutType] = None,

@@ -30,8 +30,9 @@ Signatures use a few shared input aliases:
 Python annotations check argument shapes and preserve chained return types. Rust
 still validates expression kinds, allowed values, dialects and feature flags.
 For example, a `QueryBuilder` used as a scalar argument must represent a scalar
-in the selected language. Diagnostics and custom HTTP payloads contain dynamic
-data; their dictionaries intentionally retain `Any` values.
+in the selected language. HTTP adapter inputs use read-only mappings; decoded response values have type
+`object` and need narrowing before use. See [transport contracts](client-guide.md#replace-the-http-transport).
+Other dynamic data, such as diagnostics, can still contain `Any` values.
 
 ## Reading the reference
 

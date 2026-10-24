@@ -14,3 +14,5 @@ config.validate()
 ```
 
 Put timeouts inside `http_options`; top-level timeout kwargs are rejected. Configuration objects can be updated. HttpClientOptions is a frozen container with copied dictionaries, not a recursively immutable object. For optional registry helpers, see [models and shared types](../models.md).
+
+HTTP transport injection is typed with public sync/async Protocols and factory contracts. See [replace the HTTP transport](../client-guide.md#replace-the-http-transport) for adapter signatures, factory arguments and cleanup ownership.

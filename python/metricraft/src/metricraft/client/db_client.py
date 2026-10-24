@@ -23,6 +23,7 @@ from metricraft.models import TimeValue
 from metricraft.config.base import Config, get_config
 from metricraft.config.http_options import HttpClientOptions
 from metricraft.enums import DBType
+from metricraft.transports import SyncHTTPTransport, AsyncHTTPTransport
 
 
 _logger = logging.getLogger(__name__)
@@ -58,27 +59,27 @@ class DatabaseClient:
             raise
 
     @property
-    def client(self):
+    def client(self) -> SyncHTTPTransport:
         return self._resources.sync
 
     @client.setter
-    def client(self, transport):
+    def client(self, transport: SyncHTTPTransport) -> None:
         self._resources.sync = transport
 
     @client.deleter
-    def client(self):
+    def client(self) -> None:
         del self._resources.sync
 
     @property
-    def async_client(self):
+    def async_client(self) -> Optional[AsyncHTTPTransport]:
         return self._resources.async_
 
     @async_client.setter
-    def async_client(self, transport):
+    def async_client(self, transport: Optional[AsyncHTTPTransport]) -> None:
         self._resources.async_ = transport
 
     @async_client.deleter
-    def async_client(self):
+    def async_client(self) -> None:
         del self._resources.async_
 
     @property

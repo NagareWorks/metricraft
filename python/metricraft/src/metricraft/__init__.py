@@ -17,6 +17,10 @@ from metricraft.config import (
     VMSingleConfig, VMClusterConfig, PrometheusConfig, HttpClientOptions,
 )
 from metricraft.enums import DBType
+from metricraft.transports import (
+    SyncHTTPTransport, AsyncHTTPTransport,
+    SyncHTTPTransportFactory, AsyncHTTPTransportFactory,
+)
 
 from metricraft.exceptions import MetriCraftError, MCHTTPError, TimeoutError, ConnectionError
 
@@ -45,6 +49,10 @@ __all__ = [
     'set_default_instance',
     'VMSingleConfig', 'VMClusterConfig', 'PrometheusConfig', 'HttpClientOptions',
     'DBType',
+
+    # === HTTP Transport Contracts ===
+    'SyncHTTPTransport', 'AsyncHTTPTransport',
+    'SyncHTTPTransportFactory', 'AsyncHTTPTransportFactory',
 
     # === Exception Handling ===
     # General Exceptions

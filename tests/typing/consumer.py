@@ -1,13 +1,16 @@
 """Static consumer contract, checked against an installed wheel outside the repo."""
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union, assert_type
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, assert_type
 
 from metricraft import (
     Config, DatabaseClient, DBType, HttpClientOptions, MetricsInsertData,
     MetricsQueryResult, PrometheusConfig, QueryBuilder as Q, QueryMode,
     VMClusterConfig, VMSingleConfig, get_config, prom_only, register_config,
-    set_default_instance, vm_only,
+    set_default_instance, vm_only, SyncHTTPTransport, AsyncHTTPTransport,
+    SyncHTTPTransportFactory, AsyncHTTPTransportFactory,
 )
+from metricraft.client import SyncHTTPClient, AsyncHTTPClient
+from metricraft.transports import HTTPBody, HTTPHeaders, HTTPParams, HTTPResponse, HTTPTimeout
 from metricraft.models import LabelsResult, LabelValuesResult, SeriesResult
 
 
@@ -156,3 +159,70 @@ async def async_usage() -> MetricsQueryResult:
         assert_type(result, MetricsQueryResult)
         assert_type(await client.series_async(base), SeriesResult)
         return result
+
+
+class CustomTransport:
+    def get(self, url: str, params: Optional[HTTPParams] = None, *,
+            headers: Optional[HTTPHeaders] = None,
+            timeout: Optional[HTTPTimeout] = None) -> HTTPResponse:
+        return {"status": "success", "data": {"resultType": "vector", "result": []}}
+
+    def post(self, url: str, data: HTTPBody = None,
+             params: Optional[HTTPParams] = None, *,
+             headers: Optional[HTTPHeaders] = None,
+             timeout: Optional[HTTPTimeout] = None,
+             content_type: Optional[str] = None) -> HTTPResponse:
+        return {}
+
+
+class CustomAsyncTransport:
+    async def get(self, url: str, params: Optional[HTTPParams] = None, *,
+                  headers: Optional[HTTPHeaders] = None,
+                  timeout: Optional[HTTPTimeout] = None) -> HTTPResponse:
+        return {}
+
+    async def post(self, url: str, data: HTTPBody = None,
+                   params: Optional[HTTPParams] = None, *,
+                   headers: Optional[HTTPHeaders] = None,
+                   timeout: Optional[HTTPTimeout] = None,
+                   content_type: Optional[str] = None) -> HTTPResponse:
+        return {}
+
+
+def sync_factory(*, http_options: Mapping[str, object],
+                 connection_info: Mapping[str, object]) -> SyncHTTPTransport:
+    return CustomTransport()
+
+
+def async_factory(*, http_options: Mapping[str, object],
+                  connection_info: Mapping[str, object],
+                  sync_client: SyncHTTPTransport) -> AsyncHTTPTransport:
+    return AsyncHTTPClient(sync_client=sync_client)
+
+
+def consume_factories(sync: SyncHTTPTransportFactory, async_: AsyncHTTPTransportFactory) -> None:
+    options = HttpClientOptions(client_factory=sync, async_client_factory=async_)
+    assert_type(options.client_factory, Optional[SyncHTTPTransportFactory])
+    assert_type(options.async_client_factory, Optional[AsyncHTTPTransportFactory])
+
+
+consume_factories(sync_factory, async_factory)
+custom_options = HttpClientOptions(client=CustomTransport(), async_client=CustomAsyncTransport())
+assert_type(custom_options.client, Optional[SyncHTTPTransport])
+assert_type(custom_options.async_client, Optional[AsyncHTTPTransport])
+default_options = HttpClientOptions(client=SyncHTTPClient(), async_client=AsyncHTTPClient())
+with DatabaseClient(PrometheusConfig("http://localhost:9090", http_options=custom_options)) as custom:
+    assert_type(custom.client, SyncHTTPTransport)
+    assert_type(custom.async_client, Optional[AsyncHTTPTransport])
+    assert_type(custom.client.get("http://localhost:9090/api/v1/query"), HTTPResponse)
+    custom.client = CustomTransport()
+    custom.async_client = CustomAsyncTransport()
+
+
+async def transport_mapping_inputs(sync: SyncHTTPTransport, async_: AsyncHTTPTransport) -> None:
+    params = {"query": "up"}
+    body = {"label": "value"}
+    assert_type(sync.get("http://localhost:9090", params=params), HTTPResponse)
+    assert_type(sync.post("http://localhost:9090", data=body, params=params), HTTPResponse)
+    assert_type(await async_.get("http://localhost:9090", params=params), HTTPResponse)
+    assert_type(await async_.post("http://localhost:9090", data=body, params=params), HTTPResponse)

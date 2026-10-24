@@ -5,6 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Tuple, Union
 
+from metricraft.transports import (
+    SyncHTTPTransport, AsyncHTTPTransport,
+    SyncHTTPTransportFactory, AsyncHTTPTransportFactory,
+)
+
 HeadersMapping = Mapping[str, Union[str, int, float]]
 TimeoutValue = Union[float, int]
 TimeoutTuple = Tuple[TimeoutValue, TimeoutValue]
@@ -67,10 +72,10 @@ class HttpClientOptions:
     default_headers: Dict[str, str] = field(default_factory=dict)
     prepare_request: Optional[Callable[..., Any]] = None
     opener: Optional[Callable[..., Any]] = None
-    client: Optional[Any] = None
-    async_client: Optional[Any] = None
-    client_factory: Optional[Callable[..., Any]] = None
-    async_client_factory: Optional[Callable[..., Any]] = None
+    client: Optional[SyncHTTPTransport] = None
+    async_client: Optional[AsyncHTTPTransport] = None
+    client_factory: Optional[SyncHTTPTransportFactory] = None
+    async_client_factory: Optional[AsyncHTTPTransportFactory] = None
     max_workers: Optional[int] = None
     executor: Optional[Any] = None
     extras: Dict[str, Any] = field(default_factory=dict)
@@ -81,10 +86,10 @@ class HttpClientOptions:
         default_headers: Optional[HeadersMapping] = None,
         prepare_request: Optional[Callable[..., Any]] = None,
         opener: Optional[Callable[..., Any]] = None,
-        client: Optional[Any] = None,
-        async_client: Optional[Any] = None,
-        client_factory: Optional[Callable[..., Any]] = None,
-        async_client_factory: Optional[Callable[..., Any]] = None,
+        client: Optional[SyncHTTPTransport] = None,
+        async_client: Optional[AsyncHTTPTransport] = None,
+        client_factory: Optional[SyncHTTPTransportFactory] = None,
+        async_client_factory: Optional[AsyncHTTPTransportFactory] = None,
         max_workers: Optional[int] = None,
         executor: Optional[Any] = None,
         extras: Optional[Mapping[str, Any]] = None,

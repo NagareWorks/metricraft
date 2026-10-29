@@ -38,6 +38,11 @@ jobs:
           cache: false
       - name: Validate workflow definitions
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Test CI command authorization
+        run: node --test .github/scripts/ci-command.test.cjs
       - run: cargo fmt --all -- --check
       - run: cargo fmt --manifest-path fuzz/Cargo.toml -- --check
       - run: python -m unittest discover -s scripts/tests -v

@@ -56,6 +56,8 @@ CI 还会通过 SDK 客户端，对隔离的 Prometheus 3.15.0 与 VictoriaMetri
 
 独立[兼容性工作流](../../.github/workflows/compatibility.yml) 发现官方 PromQL/MetricsQL 能力，发布 Job Summary 和 `metricraft-upstream-compatibility` 产物，其中包含 `matrix.md`、`matrix.json`、已验证上游源码快照和运行日志。报告、清单和比较快照都是生成输出，不提交。该工作流独立于单元测试和固定版本发布解析器测试集。
 
+实时上游发现按需运行，不随 PR 推送自动运行。有仓库 write 权限（含 maintain/admin）的贡献者可在 PR 会话中新增一条仅包含 `/ci run` 或 `/ci run compatibility` 的评论；两种命令都运行实时兼容性矩阵，暂不支持其他任务名。命令处理时读取一次 PR 的当前 head（含 fork PR），使用只读令牌运行该提交，不读写共享构建缓存。后续推送需重新发命令。到 **Actions → Upstream compatibility matrix → PR #…** 查看运行，摘要和产物记录被测仓库与 SHA；这项可选报告不会在 PR head 上挂必需检查。命令处理器需先合入默认分支才能生效。仍可用 **Run workflow** 手动选择分支或标签。固定版本的兼容性检查继续在每个 PR 的 CI 中自动运行。
+
 本地先构建原生 SDK，再运行 `python scripts/compatibility/check.py --output /path/outside/checkout/compatibility`。需要 curl、Go 和 promtool 3.15.0。`--offline` 复用输出目录中已验证的源码快照。检测漂移时，下载先前产物并传入 `--compare /download/matrix.json --check`；仓库不维护基线快照。签名缺失、主题未覆盖和解析器拒绝会失败；后端语义、规范化格式和未发布新增功能明确分类。`sampled` 只表示所列样例通过解析，不代表完整语言或语义支持。网络或提取失败不会静默使用过期数据。
 
 行为变更应增加有针对性的回归测试。性能改动应将构建、渲染与 HTTP I/O 分开测量，记录修订号、构建模式和负载，不能仅因使用 Rust 就推断加速。

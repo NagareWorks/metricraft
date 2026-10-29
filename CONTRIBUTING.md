@@ -87,6 +87,18 @@ the `metricraft-upstream-compatibility` Actions artifact. The artifact contains
 Reports, inventories and comparison snapshots are generated outputs, never committed.
 This workflow is separate from unit tests and the pinned release parser corpus.
 
+Live upstream discovery runs on demand, not on PR pushes. A contributor with
+repository write access (including maintain/admin) can post a new PR conversation
+comment containing only `/ci run` or `/ci run compatibility`; both run the live
+compatibility matrix. Other suite names are not supported. The command resolves
+the current PR head once, including fork PRs, and tests that exact commit with a
+read-only token and no shared build caches. Later pushes need a new command.
+Find the run under **Actions → Upstream compatibility matrix → PR #…**; its
+summary and artifact record the tested repository and SHA. This optional report
+does not attach a required check to the PR head. The command handler must first
+land on the default branch. **Run workflow** remains available to test a selected
+branch or tag manually. Fixed-version conformance still runs on every PR in CI.
+
 For local reproduction, build the native SDK and run
 `python scripts/compatibility/check.py --output /path/outside/checkout/compatibility`.
 It requires curl, Go and promtool 3.15.0. `--offline` reuses that directory's verified

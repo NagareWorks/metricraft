@@ -5,6 +5,7 @@ use std::{
 };
 mod aggregation;
 mod diagnostics;
+mod editing;
 mod functions;
 mod literals;
 mod operators;

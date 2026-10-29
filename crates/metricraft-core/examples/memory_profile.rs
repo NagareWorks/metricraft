@@ -168,6 +168,33 @@ pub fn main() {
             );
         }
     }
+    scenario("retained_ast_edits_1000", |baseline| {
+        let base = Expr::apply(
+            ">",
+            "",
+            "",
+            &[selector(256), Expr::apply("number", "0", "", &[]).unwrap()],
+        )
+        .unwrap();
+        let roots: Vec<_> = (0..1000)
+            .map(|i| {
+                let value = Expr::apply("number", &i.to_string(), "", &[]).unwrap();
+                base.replace_at(&[1], &value, Mode::PromQl, Default::default())
+                    .unwrap()
+            })
+            .collect();
+        assert!(roots.iter().all(|root| root
+            .at_path(&[0])
+            .unwrap()
+            .shares_node(&base.at_path(&[0]).unwrap())));
+        black_box(&roots);
+        let retained = LIVE.load(Relaxed) - baseline;
+        assert!(
+            retained < 1024 * 1024,
+            "editing copied the shared selector tree"
+        );
+        retained
+    });
     scenario("retained_versions_1000", |baseline| {
         let mut roots = vec![selector(0)];
         for i in 0..1_000 {

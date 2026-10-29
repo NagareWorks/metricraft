@@ -123,6 +123,8 @@ def evaluate(config, mode, start, output, report, matrix=None):
         # the already chosen build mode recorded above.
         compare(client.query(generated[0].query, time=start + 600), generated[0].expected, start + 600)
         if mode == "promql":
+            from parsing import check_extended_results
+            check_extended_results(client, start, report, compare)
             from metricraft import QueryBuilder as Q
             try:
                 client.query(Q.from_metric("mc_missing").default(0), time=start + 600)

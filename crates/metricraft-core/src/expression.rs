@@ -9,10 +9,12 @@ mod editing;
 mod functions;
 mod literals;
 mod operators;
+mod parser;
 mod render;
 mod selector;
 mod syntax;
 mod templates;
+pub use parser::{ParseError, ParseErrorKind, ParseOptions};
 pub use render::{BuildLimits, BuildOptions, Complexity};
 use selector::Selector;
 use syntax::Extra;
@@ -159,7 +161,7 @@ fn quote(s: &str, out: &mut String) {
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
-            c if c.is_control() => {
+            c if c.is_control() || c == '\u{fffd}' => {
                 write!(out, "\\u{:04x}", c as u32).unwrap();
             }
             c => out.push(c),
@@ -172,7 +174,7 @@ fn quote_len(s: &str) -> usize {
     s.chars().fold(2usize, |n, c| {
         n.saturating_add(match c {
             '"' | '\\' | '\n' | '\r' | '\t' => 2,
-            c if c.is_control() => 6,
+            c if c.is_control() || c == '\u{fffd}' => 6,
             c => c.len_utf8(),
         })
     })

@@ -13,6 +13,7 @@ sys.path[:0] = [str(ROOT / "python/metricraft/src"), str(ROOT / "tests/conforman
 from cases import cases, experimental_cases
 from migration import parser_cases
 from extensions import cases as extension_cases, FEATURES
+from parsing import check as check_native_parser
 
 
 def main():
@@ -49,6 +50,7 @@ def main():
         subprocess.run(
             ["promtool", "--enable-feature=promql-experimental-functions," + ",".join(FEATURES), "check", "rules", "--lint=none", str(rules)], check=True
         )
+        check_native_parser(generated, Path(directory))
     subprocess.run(
         ["go", "run", "-mod=readonly", "."],
         cwd=ROOT / "tests/conformance/metricsql",

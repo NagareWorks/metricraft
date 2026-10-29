@@ -11,7 +11,10 @@ def cases():
     a, b = Q.from_metric("a"), Q.from_metric("b")
     common = {
         "utf8_names": Q.from_metric('温度"metric').where_eq("x-y", 'a"} or up'),
+        "replacement_character": Q.from_metric('\ufffd').where_eq('\ufffd', '\ufffd'),
         "quoted_group": a.sum().by("x-y"),
+        "reserved_group": a.sum().by("NaN", "Inf", "without"),
+        "reserved_matching": (a / b).on("NaN").group_left("without"),
         "quoted_matching": (a / b).on("x-y").group_left("*"),
         "nonfinite_positive": Q.from_scalar(float("inf")).vector(),
         "nonfinite_negative": Q.from_scalar(float("-inf")).vector(),
@@ -29,6 +32,7 @@ def cases():
         for mode in ("promql", "metricsql"):
             yield name, q, mode
     prom = {
+        "replacement_group": a.sum().by('\ufffd', 'a\ufffd'),
         "duration_expression": a.range(Q.step().max_of(60) * 2).rate(),
         "duration_subquery": a.subquery(Q.query_range().max_of(300), Q.step().max_of(60) * 2).avg_over_time(),
         "duration_offset": a.offset(Q.step() * 2),

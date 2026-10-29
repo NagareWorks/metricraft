@@ -12,6 +12,7 @@ default = []
 
 [dependencies]
 regex = "1.11"
+regex-syntax = "0.8"
 
 [[test]]
 name = "memory_profile"

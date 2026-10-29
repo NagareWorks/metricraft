@@ -1,0 +1,1 @@
+sum by(job)(rate(requests_total{job=~"api.*"}[5m])) > 100

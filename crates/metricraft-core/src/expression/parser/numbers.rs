@@ -134,7 +134,9 @@ fn duration(text: &str) -> std::result::Result<f64, &'static str> {
     if previous == 8 || milliseconds > (i64::MAX as u64 / 1_000_000) {
         return Err("duration out of range");
     }
-    Ok(milliseconds as f64 / 1000.0)
+    // Match Go time.Duration.Seconds(): round the fractional seconds first,
+    // then add whole seconds. One division can change comparison results.
+    Ok((milliseconds / 1000) as f64 + (milliseconds % 1000) as f64 / 1000.0)
 }
 
 impl Parser<'_> {

@@ -324,6 +324,22 @@ fn builder_and_parser_agree_on_re2_quote_termination() {
 }
 
 #[test]
+fn duration_scalars_use_prometheus_rounding() {
+    for source in ["1118ms", "1s118ms"] {
+        let expr = Expr::parse(source, Mode::PromQl).unwrap();
+        let text = expr.build(Mode::PromQl).unwrap();
+        assert_eq!(text, "1.1179999999999999");
+        assert_eq!(
+            Expr::parse(&text, Mode::PromQl)
+                .unwrap()
+                .build(Mode::PromQl)
+                .unwrap(),
+            text
+        );
+    }
+}
+
+#[test]
 fn replacement_characters_roundtrip_without_changing_label_values() {
     for source in [
         r#"sum by("\ufffd","a\ufffd")(up)"#,

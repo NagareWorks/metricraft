@@ -1,31 +1,61 @@
 name: Upstream compatibility matrix
+run-name: >-
+  Upstream compatibility · ${{ github.event.issue.number && format('PR #{0}', github.event.issue.number) || github.ref_name }}
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'scripts/compatibility/**'
-      - 'scripts/check_backend_results.py'
-      - 'scripts/check_query_parsers.py'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'crates/**'
-      - 'python/metricraft/src/metricraft/builder/**'
-      - 'python/metricraft/src/metricraft/client/**'
-      - 'python/metricraft/src/metricraft/__init__.py'
-      - 'python/metricraft/src/metricraft/_native.py'
-      - 'tests/conformance/**'
-      - '.github/workflows/compatibility.yml'
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
 
-concurrency:
-  group: compatibility-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
+  request:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/ci run'))
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      repository: ${{ steps.resolve.outputs.repository }}
+      pr: ${{ steps.resolve.outputs.pr }}
+    steps:
+      # issue_comment uses the default branch, never the PR's command handler.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/github-script@v8
+        id: resolve
+        with:
+          script: |
+            const resolve = require('./.github/scripts/ci-command.cjs');
+            const target = await resolve({ github, context });
+            if (!target) {
+              await core.summary.addRaw('Use `/ci run` or `/ci run compatibility` in a new PR conversation comment.').write();
+              return;
+            }
+            for (const [key, value] of Object.entries(target)) core.setOutput(key, value);
+            await core.summary
+              .addHeading('Upstream compatibility request')
+              .addTable([
+                ['Source repository', target.repository],
+                ['Tested commit', target.sha],
+                ['Pull request', target.pr || 'Manual dispatch'],
+              ]).write();
+
   upstream-matrix:
+    needs: request
+    if: needs.request.outputs.sha != ''
+    # Only accepted requests can supersede a run; comments on other PRs cannot.
+    concurrency:
+      group: compatibility-${{ needs.request.outputs.pr || github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
@@ -33,14 +63,26 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          repository: ${{ needs.request.outputs.repository }}
+          ref: ${{ needs.request.outputs.sha }}
           persist-credentials: false
+      - name: Record tested source
+        env:
+          SOURCE_REPOSITORY: ${{ needs.request.outputs.repository }}
+          SOURCE_SHA: ${{ needs.request.outputs.sha }}
+          SOURCE_PR: ${{ needs.request.outputs.pr }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          mkdir -p "$RUNNER_TEMP/compatibility"
+          printf 'Repository: %s\nCommit: %s\nPR: %s\n' "$SOURCE_REPOSITORY" "$SOURCE_SHA" "$SOURCE_PR" | tee "$RUNNER_TEMP/compatibility/source.txt" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - uses: actions/setup-go@v6
         with:
           go-version: '1.25.3'
-          cache-dependency-path: tests/conformance/metricsql/go.sum
+          # PR code must not populate caches under the default branch's scope.
+          cache: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Set build output directory
         run: echo "CARGO_TARGET_DIR=$RUNNER_TEMP/metricraft-target" >> "$GITHUB_ENV"

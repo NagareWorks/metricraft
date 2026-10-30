@@ -37,6 +37,10 @@ CONFIG = {
     "to_dict": "Export configured HTTP settings and extras as a dictionary.",
 }
 RETURNS = {
+    "node_kind": "str — native node category. This is independent of the value type.",
+    "value_type": "Literal['scalar', 'string', 'instant', 'range', 'tuple'] — native value category.",
+    "children": "tuple[QueryBuilder, ...] — shared children with independent ownership; empty for leaves.",
+    "shares_node": "bool — native node identity. Separately parsed identical text normally returns False.",
     "parse": "QueryBuilder — an owned immutable expression, independent of the input string. ParseError carries kind and UTF-8 byte offsets on native parse failures.",
     "build": "str — validated query text, ready for storage or a client request.",
     "validate": "str — empty on success, otherwise a native validation message. Invalid Python arguments can still raise exceptions.",
@@ -48,6 +52,9 @@ RETURNS = {
     "__init__": "QueryBuilder — a stateless factory; start a from_* expression before building.",
 }
 NOTES = {
+    "children": "Labels and literal durations are metadata, not expression children. WITH exposes binding values in declaration order followed by its body. Children remain usable after the parent is released.",
+    "at_path": "An empty path shares the current root. Selectors and literals are leaves. Paths are relative to the current AST and may change after edits; they are not stable identifiers across parses.",
+    "replace_at": "Only the selected occurrence changes, even if its node is shared elsewhere. Non-root replacements preserve value_type(). An empty path replaces the root. No-op edits retain root identity but still validate dialect, scopes, feature flags and build limits. Mode defaults to MetricsQL, as with build().",
     "parse": "Unreleased. MetricsQL parsing is explicitly unsupported. Comments and formatting are discarded. No dialect or feature opt-in is retained: pass mode and features again to build(). Existing string arguments stay literal data.",
     "by": "Apply exactly one of by()/without(), once, to an ungrouped aggregation. To create both variants, derive them independently from the same aggregate. Omitting grouping is legal in both dialects.",
     "without": "Apply exactly one of by()/without(), once, to an ungrouped aggregation. Omitting grouping is legal in both dialects.",
@@ -63,6 +70,12 @@ NOTES = {
 for name in ("fill", "fill_left", "fill_right"):
     NOTES[name] = "Requires features=('promql-binop-fill-modifiers',) and matching server support."
 EXAMPLES = {
+    "node_kind": 'Q.parse("up > 10").node_kind()',
+    "value_type": 'Q.parse("up > 10").value_type()',
+    "children": 'Q.parse("up > 10").children()',
+    "at_path": 'Q.parse("up > 10").at_path([1]).build("promql")',
+    "shares_node": 'Q.parse("up").shares_node(Q.parse("up"))  # False: separately parsed nodes.',
+    "replace_at": 'Q.parse("up > 10").replace_at([1], Q.from_scalar(20), "promql").build("promql")',
     "parse": 'Q.parse("rate(requests_total[5m])").sum().by("job").build("promql")',
     "from_metric": 'Q.from_metric("http_requests_total").where_eq("job", "api").build(mode="promql")',
     "from_labels": 'Q.from_labels(job="api").build(mode="promql")',

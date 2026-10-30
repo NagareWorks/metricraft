@@ -14,10 +14,17 @@ from metricraft.transports import HTTPBody, HTTPHeaders, HTTPParams, HTTPRespons
 from metricraft.models import LabelsResult, LabelValuesResult, SeriesResult
 from metricraft import ParseError
 from metricraft.builder.parsing import ParseErrorKind
+from metricraft.builder.editing import ValueType
 
 
 base = Q.from_metric("http_requests_total").where_eq("job", "api")
 assert_type(Q.parse("up", "promql", max_depth=32), Q)
+assert_type(base.at_path([]), Q)
+assert_type(base.children(), Tuple[Q, ...])
+assert_type(base.node_kind(), str)
+assert_type(base.value_type(), ValueType)
+assert_type(base.shares_node(base), bool)
+assert_type(base.replace_at([], Q.from_metric("other"), "promql"), Q)
 try:
     Q.parse("up + @")
 except ParseError as parse_error:

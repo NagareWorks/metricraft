@@ -73,6 +73,12 @@ BUILDER_SMOKE = '''
 from metricraft import QueryBuilder as Q
 from metricraft import ParseError
 assert Q.parse('sum(up)').build('promql') == 'sum (up)'
+original = Q.parse('up > 10')
+edited = original.replace_at([1], Q.from_scalar(20), 'promql')
+assert edited.build('promql') == '(up > 20)'
+assert original.build('promql') == '(up > 10)'
+assert edited.at_path([0]).shares_node(original.children()[0])
+assert edited.node_kind() == 'binary' and edited.value_type() == 'instant'
 try:
     Q.parse('up + @')
 except ParseError as error:

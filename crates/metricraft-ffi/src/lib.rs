@@ -1,5 +1,6 @@
 //! C ABI for owned immutable expressions. The mutable prototype ABI is retired.
 
+pub mod editing;
 mod errors;
 pub mod expression;
 pub mod parsing;

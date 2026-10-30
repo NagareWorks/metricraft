@@ -6,6 +6,7 @@ from ._types import ScalarInput
 from .aggregation import AggregationMixin
 from .diagnostics import DiagnosticMixin
 from .extended_rollups import ExtendedRollupMixin
+from .editing import EditingMixin
 from .functions import FunctionMixin
 from .labels import LabelMixin
 from .operators import OperatorMixin
@@ -18,7 +19,7 @@ from .transforms import TransformMixin
 
 
 class QueryBuilder(
-    AggregationMixin, DiagnosticMixin, FunctionMixin, OperatorMixin, ParsingMixin,
+    AggregationMixin, DiagnosticMixin, EditingMixin, FunctionMixin, OperatorMixin, ParsingMixin,
     RollupMixin, ExtendedRollupMixin, TransformMixin, SelectorMixin, LabelMixin, TemporalMixin, TemplateMixin, Expression,
 ):
     """One immutable Rust expression owner for PromQL and MetricsQL.

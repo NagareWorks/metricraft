@@ -49,6 +49,31 @@ typedef struct McParseErrorInfo {
 McExpr *mc_expr_parse(const uint8_t *source, size_t source_len, uint32_t mode,
                       const McParseOptions *options, McParseErrorInfo *error_info);
 
+/* Optional additive editing exports. No operation mutates an input expression.
+ * Returned owners survive freeing their inputs; unaffected subtrees are shared. */
+typedef struct McBuildOptions {
+    size_t max_output_bytes, max_expanded_nodes;
+    uint32_t flags;
+} McBuildOptions;
+/* kind 0 = node kind, 1 = value type. Free output with mc_string_free. */
+char *mc_expr_node_info(const McExpr *expr, uint32_t kind);
+/* Query count with (output=NULL, capacity=0); otherwise fill caller-owned slots.
+ * Returns count or -1. Free each returned owner with mc_expr_free. Capacity errors
+ * leave output untouched. The caller owns the output array, not the library.
+ * Inputs must stay live, and output must not alias them. Leaves have zero children. */
+ptrdiff_t mc_expr_children(const McExpr *expr, McExpr **output, size_t capacity);
+/* Paths contain at most 1024 zero-based child indexes; empty path selects root.
+ * Nonempty paths require len readable size_t values. Returned handles are owners. */
+McExpr *mc_expr_at_path(const McExpr *expr, const size_t *indexes, size_t len);
+/* Returns 1 if native node identity matches, 0 otherwise, -1 on error. */
+int32_t mc_expr_shares_node(const McExpr *expr, const McExpr *other);
+/* Null options or zero budgets use build defaults; flags are described above.
+ * Mode is explicit: 0 PromQL, 1 MetricsQL. No-op edits still validate the root.
+ * Non-root replacements must preserve value type. Null result reports failure. */
+McExpr *mc_expr_replace_at(const McExpr *expr, const size_t *indexes, size_t len,
+                         const McExpr *replacement, uint32_t mode,
+                         const McBuildOptions *options);
+
 #ifdef __cplusplus
 }
 #endif

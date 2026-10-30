@@ -1,6 +1,7 @@
 """Editorial API descriptions. Missing entries fail generation instead of showing empty cards."""
 
 PURPOSES = {
+    "parse": "Parse saved PromQL text into the existing immutable Rust expression graph. This unreleased API supports the documented PromQL subset; it does not evaluate the query.",
     "__init__": "Create a stateless factory. Prefer the class-level from_* factories to start an expression.",
     "build": "Validate the complete expression for a dialect and render query text. This does not send a request or evaluate data.",
     "from_metric": "Start an instant-vector selector for a metric. The name is encoded as data, including names that require quoting.",

@@ -1,9 +1,64 @@
-# Query parsing: unreleased Rust foundation
+# Query parsing: unreleased API
 
 The Rust core can parse a supported subset of **Prometheus 3.15.0 PromQL** into
 the same immutable `Expr` graph used by the builder. This is development work
-for the next minor release. Python, C ABI and MetricsQL parser entry points are
-not available yet; the published Python SDK and client keep their existing APIs.
+for the next minor release. The development Python and C ABI bindings expose
+this parser; the published 0.3.0 package does not. MetricsQL parsing is not
+implemented yet. Existing builder and client APIs keep their behavior.
+
+## Python
+
+```python
+from metricraft import ParseError, QueryBuilder as Q
+
+saved = 'rate(requests_total{job="api"}[5m])'
+query = Q.parse(saved, mode="promql", max_input_bytes=65_536, max_depth=32)
+grouped = query.sum().by("job")
+text = grouped.build("promql")
+assert query.build("promql") == saved
+
+try:
+    Q.parse('{"温度"} + @')
+except ParseError as error:
+    print(error.kind, error.start, error.end)
+```
+
+`ParseError` is a `ValueError` subclass. Its `kind` is `syntax`, `validation`,
+`dialect`, `unsupported`, `limit`, or `other`; `start` and `end` are UTF-8 byte
+offsets, not Python character indexes. Python argument type errors remain
+`TypeError`/`ValueError`. `None` selects native default budgets; explicit budgets
+must be positive integers (not booleans), and depth must be at most 128.
+
+Parsing returns the ordinary `QueryBuilder` and composes with its existing
+methods. `parse()` defaults to PromQL, while the existing `build()` default stays
+MetricsQL for compatibility: pass `build("promql")` explicitly. Parsing does not
+store a dialect or feature configuration. Experimental functions and syntax need
+the corresponding options on both parsing and building. String arguments to
+existing builder methods still mean literal data, never implicitly parsed source.
+
+Client-only imports do not load native code. Older ABI-4 libraries can still run
+existing builder methods; calling the new parser on one reports a missing-feature
+error with rebuild/reinstall guidance. No alternate Python parser is used.
+
+## C ABI
+
+The additive ABI-4 entry point `mc_expr_parse` accepts a counted UTF-8 buffer,
+mode, optional `McParseOptions`, and optional caller-owned `McParseErrorInfo`.
+See [the C header](../crates/metricraft-ffi/include/metricraft.h) for declarations.
+Null options or zero fields select the defaults in the table below. Flags have
+the same meaning as `mc_expr_build_with_options`. The input is borrowed for the
+call only, and embedded NUL bytes never truncate it.
+
+A successful call returns an owning handle released with `mc_expr_free`.
+Failure returns null; `mc_last_error` returns an independent message snapshot
+released with `mc_error_free`. The optional error-info output contains kind
+1–5 for the parser categories above (6 for other), plus source byte offsets.
+It is zeroed on entry; kind 0 means no structured parser error, including ABI
+argument failures. It owns no allocation. Success clears the calling thread's
+last error. Existing expression pointers, error layout and release functions
+are unchanged.
+
+## Rust and subtree sharing
 
 ```rust
 use metricraft_core::{Expr, Mode};

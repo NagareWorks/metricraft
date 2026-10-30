@@ -42,8 +42,18 @@ class Expression:
                 )
         from .. import _native
 
-        expression = object.__new__(cls)
-        object.__setattr__(expression, "_handle", _native.create(op, a, b, children))
+        return cls._from_handle(_native.create(op, a, b, children))
+
+    @classmethod
+    def _from_handle(cls, handle):
+        from .. import _native
+
+        try:
+            expression = object.__new__(cls)
+            object.__setattr__(expression, "_handle", handle)
+        except BaseException:
+            _native.lib.mc_expr_free(handle)
+            raise
         finalize(expression, _native.lib.mc_expr_free, expression._handle)
         return expression
 

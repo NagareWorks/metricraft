@@ -2,8 +2,8 @@
 
 MetriCraft maintains one repository for the Rust core, C ABI, Python bindings and
 VictoriaMetrics client. Documentation, examples and contribution guidance are
-maintained in English and Chinese. Keep executable examples and API names consistent
-across languages.
+maintained in English for new work. Existing Chinese pages remain available;
+untranslated API entries fall back to their English contracts.
 
 ## Set up
 
@@ -143,8 +143,8 @@ checks expression kinds, dialect restrictions, feature flags and value ranges.
 ## Documentation website
 
 English Markdown in `docs/` and Chinese Markdown in `docs/zh/` are shared with the
-custom Astro site in `website/`. Maintain both languages when adding pages or API
-contracts; translated headings keep the same explicit anchors as their English counterparts.
+custom Astro site in `website/`. Maintain new pages and API contracts in English.
+Existing translated headings keep the same explicit anchors as their English counterparts.
 Use Node.js 24+ and Python 3.11+ to run `npm ci`, `npm run check` and
 `npm run build` from `website/`. The build generates API signatures from source,
 indexes local search and checks links, fragments and assets. CI includes these

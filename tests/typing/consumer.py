@@ -12,9 +12,18 @@ from metricraft import (
 from metricraft.client import SyncHTTPClient, AsyncHTTPClient
 from metricraft.transports import HTTPBody, HTTPHeaders, HTTPParams, HTTPResponse, HTTPTimeout
 from metricraft.models import LabelsResult, LabelValuesResult, SeriesResult
+from metricraft import ParseError
+from metricraft.builder.parsing import ParseErrorKind
 
 
 base = Q.from_metric("http_requests_total").where_eq("job", "api")
+assert_type(Q.parse("up", "promql", max_depth=32), Q)
+try:
+    Q.parse("up + @")
+except ParseError as parse_error:
+    assert_type(parse_error.kind, ParseErrorKind)
+    assert_type(parse_error.start, int)
+    assert_type(parse_error.end, int)
 assert_type(Q().from_metric("up"), Q)
 assert_type(base, Q)
 assert_type(base.where_regex("instance", "api-.*"), Q)

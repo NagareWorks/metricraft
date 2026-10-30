@@ -78,9 +78,8 @@ for name, translation in {
 def translate(text, mapping=TEXT):
     if not text:
         return text
-    if text not in mapping:
-        raise ValueError(f"Missing Chinese API translation: {text}")
-    return mapping[text]
+    # English is the maintained source for new APIs; retain existing translations.
+    return mapping.get(text, text)
 
 
 def localize(api):

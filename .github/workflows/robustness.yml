@@ -51,6 +51,13 @@ jobs:
         run: |
           export CARGO_TARGET_DIR="$RUNNER_TEMP/fuzz-target"
           cargo fuzz run compositions "$RUNNER_TEMP/robustness/corpus" -- -max_total_time=120 -max_len=256 -timeout=10 -rss_limit_mb=2048 -artifact_prefix="$RUNNER_TEMP/robustness/crashes/" 2>&1 | tee "$RUNNER_TEMP/robustness/fuzz.log"
+      - name: Fuzz PromQL text and immutable AST roundtrips
+        shell: bash
+        run: |
+          export CARGO_TARGET_DIR="$RUNNER_TEMP/fuzz-target"
+          mkdir -p "$RUNNER_TEMP/robustness/query-corpus"
+          cp fuzz/seeds/queries/* "$RUNNER_TEMP/robustness/query-corpus/"
+          cargo fuzz run queries "$RUNNER_TEMP/robustness/query-corpus" -- -max_total_time=120 -max_len=16384 -timeout=10 -rss_limit_mb=2048 -artifact_prefix="$RUNNER_TEMP/robustness/crashes/" 2>&1 | tee "$RUNNER_TEMP/robustness/query-fuzz.log"
       - name: Publish validation status
         if: always()
         env:

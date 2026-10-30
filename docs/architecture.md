@@ -174,6 +174,10 @@ See [the workflow guide](../CONTRIBUTING.md#github-actions) for targets and trig
 
 ## Performance and next work
 
+The next release's [Rust query parser](query-parsing.md) reads a supported PromQL
+subset into this same graph for immutable editing. Python/C ABI parsing and
+MetricsQL parsing remain separate follow-up work.
+
 Public query validation raises `TypeError` or `ValueError`; native loading failures
 raise `RuntimeError`.
 The public exception package contains `MetriCraftError` and its HTTP subclasses

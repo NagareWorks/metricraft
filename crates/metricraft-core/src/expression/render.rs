@@ -62,7 +62,14 @@ fn labels<'a>(values: &'a [String], emit: &mut impl FnMut(Part<'a>)) {
         if i != 0 {
             emit(Part::Text(", "));
         }
-        emit(Part::Label(value));
+        if ["inf", "nan", "without"]
+            .iter()
+            .any(|word| value.eq_ignore_ascii_case(word))
+        {
+            emit(Part::Quoted(value));
+        } else {
+            emit(Part::Label(value));
+        }
     }
 }
 
@@ -172,7 +179,16 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
                 return;
             }
             emit(Text("("));
+            let protect_sign = binary.op == "^"
+                && (matches!(binary.lhs.0.kind, Kind::Unary(..))
+                    || matches!(binary.lhs.0.kind, Kind::Number(n) if n.is_sign_negative()));
+            if protect_sign {
+                emit(Text("("));
+            }
             emit(Child(&binary.lhs));
+            if protect_sign {
+                emit(Text(")"));
+            }
             emit(Text(" "));
             emit(Text(&binary.op));
             if binary.return_bool {
@@ -384,7 +400,15 @@ pub(super) fn build_observed(
             }
             Part::Text(s) => out.push_str(s),
             Part::Quoted(s) => quote(s, &mut out),
-            Part::Label(s) => write_label(s, &mut out),
+            Part::Label(s) => {
+                if mode == Mode::MetricsQl && s.contains('\u{fffd}') {
+                    return Err(
+                        "U+FFFD grouping or matching labels are not supported in MetricsQL mode"
+                            .into(),
+                    );
+                }
+                write_label(s, &mut out);
+            }
             Part::Number(n) => write!(out, "{n}").unwrap(),
             Part::Selector(selector) | Part::InfoLabels(selector) => {
                 if mode == Mode::PromQl

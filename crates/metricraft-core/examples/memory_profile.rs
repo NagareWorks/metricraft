@@ -210,6 +210,29 @@ pub fn main() {
         black_box(&roots);
         LIVE.load(Relaxed) - baseline
     });
+    scenario("parsed_alert_edits_1000", |baseline| {
+        let source = format!("{} > 100", selector(256).build(Mode::PromQl).unwrap());
+        let base = Expr::parse(&source, Mode::PromQl).unwrap();
+        drop(source);
+        let query = base.at_path(&[0]).unwrap();
+        let roots: Vec<_> = (0..1000)
+            .map(|i| {
+                let value = Expr::parse(&i.to_string(), Mode::PromQl).unwrap();
+                let edited = base
+                    .replace_at(&[1], &value, Mode::PromQl, Default::default())
+                    .unwrap();
+                assert!(edited.at_path(&[0]).unwrap().shares_node(&query));
+                edited
+            })
+            .collect();
+        black_box(&roots);
+        let retained = LIVE.load(Relaxed) - baseline;
+        assert!(
+            retained < 1024 * 1024,
+            "parsed edits duplicated the selector"
+        );
+        retained
+    });
     scenario("create_build_drop_10000", |baseline| {
         let base = selector(32);
         for _ in 0..10_000 {

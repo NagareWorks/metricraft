@@ -20,3 +20,10 @@ path = "fuzz_targets/compositions.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "queries"
+path = "fuzz_targets/queries.rs"
+test = false
+doc = false
+bench = false

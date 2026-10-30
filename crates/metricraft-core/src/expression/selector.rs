@@ -122,7 +122,7 @@ impl Selector {
 // Translate Go/RE2 quoting and octal escapes for the empty-value check;
 // preserve the user's actual RE2
 // pattern in the emitted query. Escaped backslashes never open a quoted block.
-fn unquote_re2(pattern: &str) -> String {
+pub(super) fn unquote_re2(pattern: &str) -> String {
     let mut result = String::with_capacity(pattern.len());
     let mut chars = pattern.chars().peekable();
     while let Some(c) = chars.next() {
@@ -134,18 +134,12 @@ fn unquote_re2(pattern: &str) -> String {
             Some('Q') => {
                 let mut literal = String::new();
                 while let Some(c) = chars.next() {
-                    if c == '\\' {
-                        match chars.next() {
-                            Some('E') => break,
-                            Some(next) => {
-                                literal.push(c);
-                                literal.push(next);
-                            }
-                            None => literal.push(c),
-                        }
-                    } else {
-                        literal.push(c);
+                    // RE2 ends at the first \E, even in a run of backslashes.
+                    if c == '\\' && chars.peek() == Some(&'E') {
+                        chars.next();
+                        break;
                     }
+                    literal.push(c);
                 }
                 result.push_str(&regex::escape(&literal));
             }
@@ -162,7 +156,7 @@ fn unquote_re2(pattern: &str) -> String {
                     let value = u32::from_str_radix(&digits, 8).unwrap();
                     result.push_str(&format!("\\x{{{value:x}}}"));
                 } else {
-                    // RE2 rejects nonzero one/two-digit backreference forms.
+                    // Leave nonzero short forms for the caller's regex validator.
                     result.push('\\');
                     result.push_str(&digits);
                 }

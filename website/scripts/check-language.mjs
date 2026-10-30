@@ -185,7 +185,8 @@ for (let c = 0; c < englishApi.length; c++) {
       "example",
     ])
       assert.deepEqual(zh[key], en[key]);
-    assert.match(zh.purpose, /[\u3400-\u9fff]/);
+    // New API contracts are maintained in English; existing translations remain.
+    if (zh.purpose !== en.purpose) assert.match(zh.purpose, /[\u3400-\u9fff]/);
     const dialect = en.badges.includes("prom_only")
       ? "PromQL"
       : en.badges.includes("vm_only")
@@ -208,12 +209,13 @@ for (let c = 0; c < englishApi.length; c++) {
     zh.parameters.forEach((p, i) => {
       for (const key of ["name", "display", "default"])
         assert.equal(p[key], en.parameters[i][key]);
-      assert.match(p.description, /[\u3400-\u9fff]/);
+      if (p.description !== en.parameters[i].description)
+        assert.match(p.description, /[\u3400-\u9fff]/);
     });
   }
 }
 console.log(
-  `Verified ${files.length} bilingual page pairs, redirect/preferences/storage fallbacks, shared anchors/code, removed pages and complete API translations.`,
+  `Verified ${files.length} page pairs, redirect/preferences/storage fallbacks, shared anchors/code, removed pages and translated or English-fallback API contracts.`,
 );
 
 // Mermaid's strict parser sanitizes labels and therefore needs a DOM even when

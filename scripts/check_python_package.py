@@ -71,6 +71,14 @@ print("Installed SDK: sync/async HTTP works for all three configurations without
 
 BUILDER_SMOKE = '''
 from metricraft import QueryBuilder as Q
+from metricraft import ParseError
+assert Q.parse('sum(up)').build('promql') == 'sum (up)'
+try:
+    Q.parse('up + @')
+except ParseError as error:
+    assert (error.kind, error.start, error.end) == ('syntax', 5, 6)
+else:
+    raise AssertionError('Installed parser must report structured errors')
 base = Q.from_metric('up').where_eq('job', 'api')
 assert Q.__module__ == 'metricraft.builder.query_builder'
 assert not hasattr(base, '__dict__')

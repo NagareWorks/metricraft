@@ -37,6 +37,7 @@ CONFIG = {
     "to_dict": "Export configured HTTP settings and extras as a dictionary.",
 }
 RETURNS = {
+    "parse": "QueryBuilder — an owned immutable expression, independent of the input string. ParseError carries kind and UTF-8 byte offsets on native parse failures.",
     "build": "str — validated query text, ready for storage or a client request.",
     "validate": "str — empty on success, otherwise a native validation message. Invalid Python arguments can still raise exceptions.",
     "analyze": "dict — graph counts and heuristic advice, not a server execution plan.",
@@ -47,6 +48,7 @@ RETURNS = {
     "__init__": "QueryBuilder — a stateless factory; start a from_* expression before building.",
 }
 NOTES = {
+    "parse": "Unreleased. MetricsQL parsing is explicitly unsupported. Comments and formatting are discarded. No dialect or feature opt-in is retained: pass mode and features again to build(). Existing string arguments stay literal data.",
     "by": "Apply exactly one of by()/without(), once, to an ungrouped aggregation. To create both variants, derive them independently from the same aggregate. Omitting grouping is legal in both dialects.",
     "without": "Apply exactly one of by()/without(), once, to an ungrouped aggregation. Omitting grouping is legal in both dialects.",
     "range": "With no arguments this defaults to '5m'. For a computed PromQL expression use subquery() instead.",
@@ -61,6 +63,7 @@ NOTES = {
 for name in ("fill", "fill_left", "fill_right"):
     NOTES[name] = "Requires features=('promql-binop-fill-modifiers',) and matching server support."
 EXAMPLES = {
+    "parse": 'Q.parse("rate(requests_total[5m])").sum().by("job").build("promql")',
     "from_metric": 'Q.from_metric("http_requests_total").where_eq("job", "api").build(mode="promql")',
     "from_labels": 'Q.from_labels(job="api").build(mode="promql")',
     "from_scalar": 'Q.from_scalar(42).build(mode="promql")',

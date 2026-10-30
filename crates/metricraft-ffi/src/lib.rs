@@ -2,6 +2,7 @@
 
 mod errors;
 pub mod expression;
+pub mod parsing;
 
 pub use errors::McError;
 use std::ffi::CString;
@@ -9,6 +10,7 @@ use std::os::raw::c_char;
 
 /// Binding contract version, independent of the package release version.
 /// Changes to required binding symbols, pointers or ownership increment this.
+/// Optional additive entry points do not change the existing ABI-4 contract.
 #[no_mangle]
 pub extern "C" fn mc_abi_version() -> u32 {
     4

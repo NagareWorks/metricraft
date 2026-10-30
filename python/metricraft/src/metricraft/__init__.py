@@ -2,7 +2,7 @@
 # Copyright (c) 2025-present NagareWorks
 """Immutable PromQL/MetricsQL construction and independent HTTP client contracts."""
 
-from metricraft.builder import QueryBuilder, QueryMode, vm_only, prom_only
+from metricraft.builder import QueryBuilder, QueryMode, vm_only, prom_only, ParseError
 
 from metricraft.client import DatabaseClient
 from metricraft.models import (
@@ -34,7 +34,7 @@ __description__ = "PromQL/MetricsQL query builder and HTTP client"
 # Public API exports
 __all__ = [
     # === Core Query Building ===
-    'QueryBuilder', 'QueryMode', 'vm_only', 'prom_only',
+    'QueryBuilder', 'QueryMode', 'vm_only', 'prom_only', 'ParseError',
 
     # === TSDB Client ===
     'DatabaseClient',

@@ -54,7 +54,8 @@ JavaScript SDK and does not add an execution engine to the Python package.
   language; source-code links still point to the real repository files.
 - Interface translations live in `src/data/ui.zh.json`. Generated API translations
   live in `scripts/api_purposes_zh.py`, `api_parameters_zh.py` and
-  `api_localization.py`. Missing API translations fail generation. Names,
+  `api_localization.py`. New API contracts are maintained in English; existing
+  translations remain, and untranslated contracts use the English source. Names,
   signatures, defaults and executable examples stay identical across languages.
   Pagefind indexes each explicit language separately; legacy aliases are excluded.
 - Use fenced `mermaid` blocks for relationships and workflows, with `accTitle`

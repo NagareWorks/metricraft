@@ -81,10 +81,12 @@ def main():
     base = Q.from_metric("requests_total")
     for i in range(256):
         base = base.where_eq("label_" + str(i), "x" * 128)
+    editable = base > 0
     # Initialize ctypes and allocator paths before taking the baseline.
     for _ in range(200):
         base.where_eq("job", "warmup").build("promql")
         base.label_copy(("label_0", "copied")).build("metricsql")
+        editable.replace_at([1], Q.from_scalar(1), "promql").at_path([0]).shares_node(base)
     process_memory()
     gc.collect()
     tracemalloc.start()
@@ -93,6 +95,7 @@ def main():
         ("", "promql", lambda i: base.where_eq("instance", str(i))),
         ("label_copy_", "metricsql", lambda i: base.label_copy(("label_0", "copied"))),
         ("template_", "metricsql", lambda i: Q.reference("x").with_(x=base)),
+        ("edit_", "promql", lambda i: editable.replace_at([1], Q.from_scalar(i), "promql")),
     ):
         for batch in range(args.batches):
             roots = [make(i) for i in range(args.branches)]
@@ -101,6 +104,8 @@ def main():
                 samples.append(snapshot(prefix + "retained_branches"))
             for root in roots:
                 root.build(mode)
+                if prefix == "edit_":
+                    assert root.at_path([0]).shares_node(base), "editing copied an untouched subtree"
             del root, roots
             gc.collect()
             assert all(ref() is None for ref in refs), "a Python query owner was retained"
@@ -108,11 +113,11 @@ def main():
             samples.append(snapshot(prefix + "released_batch_" + str(batch + 1)))
     tracemalloc.stop()
     package = ROOT / "python/metricraft/src/metricraft"
-    source_paths = list((ROOT / "crates").rglob("*.rs")) + list((package / "builder").glob("*.py")) + [package / "_native.py"]
+    source_paths = list((ROOT / "crates").rglob("*.rs")) + list((package / "builder").glob("*.py")) + list(package.glob("_native*.py"))
     result = {
         "platform": platform.platform(), "python": sys.version,
         "branches": args.branches, "batches": args.batches, "labels_in_shared_base": 256,
-        "workloads": ["selector branches", "label_copy branches with per-call string owners", "WITH branches sharing a binding"],
+        "workloads": ["selector branches", "label_copy branches with per-call string owners", "WITH branches sharing a binding", "threshold edits sharing an untouched selector"],
         "native_sha256": hashlib.sha256(Path(library).read_bytes()).hexdigest(),
         "source_sha256": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(source_paths)},
         "note": "Python heap tracing and process memory include measurement overhead and allocator caches. This is not a native leak detector.",

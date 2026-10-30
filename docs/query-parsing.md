@@ -40,6 +40,37 @@ Client-only imports do not load native code. Older ABI-4 libraries can still run
 existing builder methods; calling the new parser on one reports a missing-feature
 error with rebuild/reinstall guidance. No alternate Python parser is used.
 
+### Edit a saved alert
+
+```python
+original = Q.parse('sum by (job) (rate(requests_total[5m])) > 100')
+updated = original.replace_at([1], Q.from_scalar(200), mode="promql")
+assert original.build("promql").endswith(" > 100)")
+assert updated.build("promql").endswith(" > 200)")
+assert updated.at_path([0]).shares_node(original.at_path([0]))
+```
+
+`children()` returns an ordered tuple of independent expression owners;
+`at_path()` follows zero-based child indexes. An empty path selects the root.
+Paths accept iterables of at most 1024 unsigned `size_t` integers, excluding
+booleans. Negative indexes and missing children raise errors. Selectors and
+literals are leaves: labels and literal durations are metadata, not children.
+WITH nodes expose binding values in declaration order followed by their body.
+
+`node_kind()` identifies a node such as `selector`, `aggregate` or `binary`;
+`value_type()` is `scalar`, `string`, `instant`, `range` or `tuple`.
+Non-root replacements must preserve the selected value type. To edit a leaf's
+metadata, construct a replacement using the existing builder and replace that
+occurrence. Only the chosen occurrence changes even when its node is shared at
+other paths. Paths describe the current graph, not stable identifiers across edits.
+
+`replace_at()` shares unchanged nodes and retains root identity for a same-node
+replacement. It always validates the resulting root, including scopes, dialect,
+feature flags and build budgets. Its mode defaults to MetricsQL, as `build()`
+does; use `mode="promql"` explicitly for saved Prometheus rules. A child owner
+remains usable after its parent is released. `shares_node()` tests native identity,
+not semantic equality; parsing identical strings separately does not intern them.
+
 ## C ABI
 
 The additive ABI-4 entry point `mc_expr_parse` accepts a counted UTF-8 buffer,
@@ -57,6 +88,18 @@ It is zeroed on entry; kind 0 means no structured parser error, including ABI
 argument failures. It owns no allocation. Success clears the calling thread's
 last error. Existing expression pointers, error layout and release functions
 are unchanged.
+
+The optional `mc_expr_at_path`, `mc_expr_replace_at`, `mc_expr_children`,
+`mc_expr_node_info` and `mc_expr_shares_node` exports operate on the same owners.
+For children, first query the count with a null output and zero capacity, then
+provide an array of pointer slots. The immutable count cannot change between
+calls while the parent stays live. Free every returned child with `mc_expr_free`;
+the caller owns the array itself. Capacity failures leave its slots untouched.
+Node-info strings use `mc_string_free`. Child counts and identity checks return
+`-1` on failure; owning-pointer results return null. Use `mc_last_error` for the
+message. `McBuildOptions` uses the same budgets/flags as building; zero budgets
+or a null options pointer select defaults. Editing is independent of parsing and
+also supports MetricsQL expressions created through the existing builder.
 
 ## Rust and subtree sharing
 

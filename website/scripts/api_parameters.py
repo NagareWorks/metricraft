@@ -138,6 +138,14 @@ CONFIG_PARAMS = {
 
 
 def parameter(cls, method, name):
+    if cls == "QueryBuilder" and method in ("at_path", "replace_at", "shares_node"):
+        editing = {
+            "path": ("Iterable[int]", "Zero-based expression child indexes, at most 1024. Each must fit unsigned size_t; booleans, negatives, non-integers and missing children are rejected. Empty selects the root. Iterators are consumed only up to the depth limit."),
+            "replacement": ("QueryBuilder", "An existing expression, never implicitly parsed or coerced. A non-root replacement must have the selected node's value type. Both inputs remain unchanged."),
+            "other": ("QueryBuilder", "An existing expression whose native node identity is compared with the receiver."),
+        }
+        if name in editing:
+            return editing[name]
     if cls == "QueryBuilder" and method == "parse":
         parsing = {
             "source": ("str", "Complete UTF-8 query source. Interior NUL is parsed rather than truncating input. Invalid or unsupported source raises ParseError; there is no raw fallback."),

@@ -13,7 +13,7 @@ CATEGORIES = {"Expression": "construction", "Query Builder": "construction", "Se
     "Aggregation": "aggregation", "Operators": "operators", "Temporal": "time", "Rollups": "rollups",
     "Extended Rollups": "metricsql-rollups", "Functions": "functions", "Labels": "labels",
     "Transforms": "transforms", "Templates": "templates", "Diagnostics": "diagnostics",
-    "Parsing": "construction"}
+    "Parsing": "construction", "Editing": "construction"}
 
 
 def parameters(args):

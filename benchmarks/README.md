@@ -78,7 +78,9 @@ scenario and runs automatically as part of `cargo test --workspace`.
 
 The Python probe uses the real release library, weak references, `tracemalloc` and
 process memory (Windows private/working-set bytes or Linux RSS). The Python samples
-cover selector, label-copy and WITH branches, including per-call string owners.
+cover selector, label-copy, WITH and immutable threshold-edit branches, including
+per-call string owners. Edit branches verify that the untouched selector shares
+its native node while retained/released samples track Python owners and process memory.
 Native probes check 10,000 label/template branches sharing a large selector and
 release a 100,000-deep WITH chain.
 These probes run through the same unified benchmark Action. The Python samples

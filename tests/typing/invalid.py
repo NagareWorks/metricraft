@@ -8,6 +8,9 @@ Q.from_metric(123)  # expect: arg-type
 Q.parse(123)  # expect: arg-type
 Q.parse("up", "sql")  # expect: arg-type
 Q.parse("up", max_tokens="many")  # expect: arg-type
+Q.from_metric("up").replace_at([], "down")  # expect: arg-type
+Q.from_metric("up").shares_node("up")  # expect: arg-type
+Q.from_metric("up").at_path([0.5])  # expect: list-item
 base.where_eq("job", 123)  # expect: arg-type
 base.where("job", "contains", "api")  # expect: arg-type
 base.rate(300)  # expect: arg-type

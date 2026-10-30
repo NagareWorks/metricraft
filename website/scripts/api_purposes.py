@@ -1,6 +1,12 @@
 """Editorial API descriptions. Missing entries fail generation instead of showing empty cards."""
 
 PURPOSES = {
+    "node_kind": "Read the native AST node category, such as selector, function, aggregate or binary. Unreleased.",
+    "value_type": "Read the query value category used to validate composition and non-root replacements. Unreleased.",
+    "children": "Read ordered direct expression children as independent owners sharing their native nodes. Unreleased.",
+    "at_path": "Read one occurrence by child-index path without copying its subtree. Unreleased.",
+    "shares_node": "Check whether two expressions own the same native node; this is not semantic equality. Unreleased.",
+    "replace_at": "Replace one occurrence in an immutable AST, share unaffected nodes, and validate the resulting root. Unreleased.",
     "parse": "Parse saved PromQL text into the existing immutable Rust expression graph. This unreleased API supports the documented PromQL subset; it does not evaluate the query.",
     "__init__": "Create a stateless factory. Prefer the class-level from_* factories to start an expression.",
     "build": "Validate the complete expression for a dialect and render query text. This does not send a request or evaluate data.",

@@ -30,7 +30,8 @@ char *mc_expr_inspect(const McExpr *expr, uint32_t kind, uint32_t mode,
  * These structures have a fixed layout. Zero option fields select defaults.
  * Mode: 0 PromQL; 1 MetricsQL (parsing currently unsupported).
  * Flags: bit 0 experimental functions, 1 duration expressions,
- *        2 extended range selectors, 3 binary fill modifiers. */
+ *        2 legacy extended-range opt-in (now stable), 3 binary fill modifiers,
+ *        4 unquoted UTF-8 names (parser only; output uses quoted names). */
 typedef struct McParseOptions {
     size_t max_input_bytes, max_tokens, max_depth, max_work;
     size_t max_output_bytes, max_expanded_nodes;

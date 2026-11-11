@@ -1,8 +1,8 @@
 # Backend result validation
 
 Parser acceptance does not establish the meaning of a query. The separate
-`scripts/check_backend_results.py` integration runner starts pinned Prometheus 3.15.0
-and VictoriaMetrics 1.153.0 processes, loads the same synthetic time series into
+`scripts/check_backend_results.py` integration runner starts pinned Prometheus 3.16.0
+and VictoriaMetrics 1.156.0 processes, loads the same synthetic time series into
 both, and checks results against independently calculated expectations.
 
 The corpus includes grouping and ungrouped aggregation, rates, increases, an error

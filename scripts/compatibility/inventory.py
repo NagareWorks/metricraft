@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 
 SOURCES = {
     "prom-signatures": "https://raw.githubusercontent.com/prometheus/prometheus/main/promql/parser/functions.go",
-    "prom-baseline-signatures": "https://raw.githubusercontent.com/prometheus/prometheus/v3.15.0/promql/parser/functions.go",
+    "prom-baseline-signatures": "https://raw.githubusercontent.com/prometheus/prometheus/v3.16.0/promql/parser/functions.go",
     "prom-functions": "https://raw.githubusercontent.com/prometheus/prometheus/main/docs/querying/functions.md",
     "prom-operators": "https://raw.githubusercontent.com/prometheus/prometheus/main/docs/querying/operators.md",
+    "prom-baseline-operators": "https://raw.githubusercontent.com/prometheus/prometheus/v3.16.0/docs/querying/operators.md",
     "prom-basics": "https://raw.githubusercontent.com/prometheus/prometheus/main/docs/querying/basics.md",
     "metricsql": "https://raw.githubusercontent.com/VictoriaMetrics/VictoriaMetrics/master/docs/victoriametrics/MetricsQL.md",
 }
@@ -101,6 +102,18 @@ def discover(texts):
             if name not in known:
                 add("promql", "function", name, "prom-functions", title + body)
                 known.add(name)
+    operator_titles = {
+        "Arithmetic binary operators", "Trigonometric binary operators",
+        "Comparison binary operators", "Logical/set binary operators",
+        "Histogram trim operators", "Bitwise binary operators",
+    }
+    baseline_operators = {
+        title: set(re.findall(r"(?m)^\* `([^`]+)`", body))
+        for _, title, body in sections(texts["prom-baseline-operators"])
+        if title in operator_titles
+    }
+    if "+" not in baseline_operators.get("Arithmetic binary operators", set()):
+        raise ValueError("pinned Prometheus operator catalog extraction failed")
     for source in ("prom-basics", "prom-operators"):
         parents = {}
         for level, title, body in sections(texts[source]):
@@ -109,14 +122,16 @@ def discover(texts):
             if level > 3 and parents:
                 path = parents[max(parents)] + "/" + path
             parents[level] = path
-            add("promql", "topic", source + "/" + path, source, title + body, title=title)
+            metadata = ({"in_prometheus_baseline_catalog": title in baseline_operators}
+                        if source == "prom-operators" and title in operator_titles else {})
+            add("promql", "topic", source + "/" + path, source, title + body, title=title, **metadata)
             if title == "Aggregation operators":
                 for name in re.findall(r"(?m)^\* `([a-z_]+)\(", body):
                     add("promql", "aggregate", name, source, name)
-            if title in ("Arithmetic binary operators", "Trigonometric binary operators",
-                         "Comparison binary operators", "Logical/set binary operators", "Histogram trim operators"):
+            if source == "prom-operators" and title in operator_titles:
                 for op in re.findall(r"(?m)^\* `([^`]+)`", body):
-                    add("promql", "operator", op, source, op)
+                    add("promql", "operator", op, source, op,
+                        in_prometheus_baseline_catalog=op in baseline_operators.get(title, set()))
 
     category = ""
     introduction = texts["metricsql"].split("\n## ", 1)[0]

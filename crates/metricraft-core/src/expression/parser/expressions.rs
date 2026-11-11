@@ -128,10 +128,11 @@ impl Parser<'_> {
                     }
                     return self.apply(start, "call", &name, "", &args);
                 }
-                if !name
-                    .bytes()
-                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'_' | b':'))
-                {
+                if !super::names::valid(
+                    &name,
+                    true,
+                    self.options.build.syntax_features & super::names::FEATURE != 0,
+                ) {
                     return Err(super::ParseError::kind(
                         Error::Syntax,
                         start,

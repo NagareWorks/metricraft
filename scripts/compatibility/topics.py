@@ -71,7 +71,7 @@ def witnesses(row):
 
 def responsibility(row):
     if row.get("in_prometheus_baseline_catalog") is False:
-        return "upstream_ahead", "Present in upstream main, absent from the pinned Prometheus 3.15.0 release; tracked for the next baseline."
+        return "upstream_ahead", "Present in upstream main, absent from the pinned Prometheus 3.16.0 release; tracked for the next baseline."
     if row["kind"] == "semantic_difference" or row["name"] in {
         "prom-basics/reconciliation-of-histogram-bucket-layouts", "prom-basics/samples",
         "prom-basics/staleness", "prom-basics/gotchas", "prom-basics/avoiding-slow-queries-and-overloads",

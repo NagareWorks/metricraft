@@ -155,15 +155,14 @@ fn feature_flags_are_not_enabled_implicitly() {
     let mut options = ParseOptions::default();
     options.build.experimental_functions = true;
     assert!(Expr::parse_with_options(source, Mode::PromQl, options).is_ok());
-    for (source, flag) in [("rate(up[5m] smoothed)", 4), ("a + fill(0) b", 8)] {
-        assert!(Expr::parse(source, Mode::PromQl).is_err());
-        options.build.syntax_features = flag;
-        let parsed = Expr::parse_with_options(source, Mode::PromQl, options).unwrap();
-        let rendered = parsed
-            .build_with_options(Mode::PromQl, options.build)
-            .unwrap();
-        assert!(Expr::parse_with_options(&rendered, Mode::PromQl, options).is_ok());
-    }
+    let source = "a + fill(0) b";
+    assert!(Expr::parse(source, Mode::PromQl).is_err());
+    options.build.syntax_features = 8;
+    let parsed = Expr::parse_with_options(source, Mode::PromQl, options).unwrap();
+    let rendered = parsed
+        .build_with_options(Mode::PromQl, options.build)
+        .unwrap();
+    assert!(Expr::parse_with_options(&rendered, Mode::PromQl, options).is_ok());
 }
 
 #[test]

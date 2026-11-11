@@ -67,8 +67,7 @@ def test_dialect_and_experimental_features_are_explicit():
         parsed.build("promql")
     assert parsed.build("promql", experimental_functions=True) == source
     source = "rate(up[5m] smoothed)"
-    with pytest.raises(ParseError):
-        Q.parse(source)
+    assert Q.parse(source).build("promql") == source
     parsed = Q.parse(source, features=("promql-extended-range-selectors",))
     assert parsed.build("promql", features=("promql-extended-range-selectors",)) == source
 

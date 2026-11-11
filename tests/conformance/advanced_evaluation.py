@@ -40,11 +40,18 @@ def cases(index):
         Case("fill_missing", (totals + missing).fill_right(0), jobs(3 * index, 10),
              ("promql",), features=("promql-binop-fill-modifiers",)),
         Case("anchored_rate", Q.from_metric("mc_requests_total").range("5m").anchored().rate().sum().by("job"),
-             jobs(15, 3), ("promql",), features=("promql-extended-range-selectors",)),
+             jobs(15, 3), ("promql",)),
         Case("smoothed_rate", Q.from_metric("mc_requests_total").range("5m").smoothed().offset("1m").rate().sum().by("job"),
-             jobs(15, 3), ("promql",), features=("promql-extended-range-selectors",)),
+             jobs(15, 3), ("promql",)),
         Case("duration_range", limits.subquery(Q.query_range().max_of(300), Q.step().max_of(60)).avg_over_time().sum().by("job"),
              jobs(100, 10), ("promql",), range_check=True, features=("promql-duration-expr",)),
     ]
+    # Five one-minute samples form four intervals. Integrate the linear api
+    # gauges and constant worker gauge independently for each quadrature rule.
+    for strategy, shift in ((None, 8), (0, 10), (1, 6), (2, 8)):
+        prom.append(Case("integral_" + str(strategy),
+                         a.integral("5m", strategy=strategy).sum().by("job"),
+                         jobs(180 * (4 * index - shift), 2400), ("promql",),
+                         range_check=True, experimental_functions=True))
     return common + [Case("vm_" + name, query, expected, ("metricsql",), range_check=True)
                      for name, query, expected in vm] + prom

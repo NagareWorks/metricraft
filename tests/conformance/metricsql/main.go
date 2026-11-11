@@ -42,5 +42,5 @@ func main() {
 	if failed {
 		os.Exit(1)
 	}
-	fmt.Printf("MetricsQL v0.87.4 parsed %d expressions\n", len(expressions))
+	fmt.Printf("MetricsQL v0.87.6 parsed %d expressions\n", len(expressions))
 }

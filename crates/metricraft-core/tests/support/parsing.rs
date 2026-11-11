@@ -17,7 +17,7 @@ pub fn exercise(data: &[u8]) {
                 max_expanded_nodes: 4096,
             },
             experimental_functions: true,
-            syntax_features: 14,
+            syntax_features: 30,
         },
     };
     match Expr::parse_with_options(source, Mode::PromQl, options) {

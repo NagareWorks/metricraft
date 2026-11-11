@@ -112,7 +112,8 @@ impl Extra {
     pub fn feature(&self) -> u32 {
         match self {
             Self::Range(..) | Self::Subquery(..) | Self::Offset(..) => 2,
-            Self::Suffix(..) => 4,
+            // Anchored/smoothed selectors are stable in Prometheus 3.16.
+            // The old opt-in bit remains accepted by the bindings.
             _ => 0,
         }
     }

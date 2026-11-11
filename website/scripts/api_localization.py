@@ -68,8 +68,6 @@ for name, translation in {
     "function": "字符串是字面量。表达式请用 Q.from_metric('up')；function('rate', 'up[5m]') 不会把参数解析为查询。",
     "from_scalar": "原生标量使用 f64，超出 IEEE-754 精确整数范围的 Python 整数可能被舍入。",
     "histogram_quantile": "传统 Prometheus 桶在聚合时需要保留 le 标签。原生直方图支持与插值由后端决定。",
-    "anchored": "需要 features=('promql-extended-range-selectors',) 及对应服务器支持。可用窗口函数包括 rate、increase、delta、changes、resets。",
-    "smoothed": "需要 features=('promql-extended-range-selectors',) 及对应服务器支持。可用窗口函数包括 rate、increase、delta。",
     "fill": "需要 features=('promql-binop-fill-modifiers',) 及对应服务器支持。",
 }.items():
     TEXT[en.NOTES[name]] = translation

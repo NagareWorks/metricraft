@@ -23,7 +23,7 @@ production preview, build first:
 ```sh
 npm run check
 npm run build
-python scripts/check-native.py  # requires promtool 3.15.0 on PATH
+python scripts/check-native.py  # requires promtool 3.16.0 on PATH
 npm run preview
 ```
 

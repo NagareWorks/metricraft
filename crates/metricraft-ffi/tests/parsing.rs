@@ -109,7 +109,7 @@ fn parse_arguments_limits_and_dialect_fail_without_partial_handles() {
             assert_eq!(info.kind, 5);
         }
         let options = McParseOptions {
-            flags: 16,
+            flags: 32,
             ..Default::default()
         };
         assert!(mc_expr_parse(b"up".as_ptr(), 2, 0, &options, &mut info).is_null());

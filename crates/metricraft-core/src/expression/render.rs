@@ -31,7 +31,8 @@ pub struct BuildOptions {
     pub limits: BuildLimits,
     /// The caller's Prometheus server must enable promql-experimental-functions.
     pub experimental_functions: bool,
-    /// Feature bits 1: duration expressions, 2: extended ranges, 3: binary fill.
+    /// Feature bits 1: duration expressions, 2: legacy extended-range opt-in,
+    /// 3: binary fill, 4: unquoted UTF-8 names (parsing; rendering quotes names).
     pub syntax_features: u32,
 }
 

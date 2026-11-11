@@ -86,7 +86,8 @@ for examples and [contributing](CONTRIBUTING.md) for source setup.
 - **Independent client:** sync and async queries support Prometheus,
   VictoriaMetrics single-node and cluster configurations in one package.
 
-The stable language baseline is **Prometheus 3.15.0 / VictoriaMetrics 1.153.0**.
+The development language baseline is **Prometheus 3.16.0 / VictoriaMetrics 1.156.0**;
+the published 0.3.0 package targets **3.15.0 / 1.153.0**.
 [Language support](docs/language-support.md) explains feature flags and limits.
 Actions generates upstream compatibility reports and validates real backend
 results; benchmark and sanitizer reports are separate artifacts.

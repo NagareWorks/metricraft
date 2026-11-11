@@ -147,7 +147,8 @@ def _string(result):
 
 def _feature_flags(experimental_functions, features):
     names = {"promql-experimental-functions": 1, "promql-duration-expr": 2,
-             "promql-extended-range-selectors": 4, "promql-binop-fill-modifiers": 8}
+             "promql-extended-range-selectors": 4, "promql-binop-fill-modifiers": 8,
+             "promql-unquoted-utf8-names": 16}
     if isinstance(features, str):
         raise TypeError("features must be a collection of feature names")
     flags = int(experimental_functions)

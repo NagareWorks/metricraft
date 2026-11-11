@@ -16,6 +16,11 @@ def values():
 def function_args(row, prom_signatures):
     v = values()
     name = row["name"]
+    if row["mode"] == "promql" and name == "integral":
+        yield "default-strategy", [v["Matrix"]]
+        for strategy in (0, 1, 2):
+            yield "strategy-" + str(strategy), [v["Matrix"], strategy]
+        return
     if row["mode"] == "metricsql" and name in extension_recipes(v):
         for i, args in enumerate(extension_recipes(v)[name]):
             yield "recipe-" + str(i), args

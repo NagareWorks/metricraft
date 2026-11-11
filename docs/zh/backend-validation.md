@@ -1,6 +1,6 @@
 # 后端结果验证
 
-解析器接受查询，并不能证明查询的语义。独立集成脚本 `scripts/check_backend_results.py` 会启动固定版本 Prometheus 3.15.0 和 VictoriaMetrics 1.153.0，向两者导入相同合成时间序列，并对照独立计算的预期值检查结果。
+解析器接受查询，并不能证明查询的语义。独立集成脚本 `scripts/check_backend_results.py` 会启动固定版本 Prometheus 3.16.0 和 VictoriaMetrics 1.156.0，向两者导入相同合成时间序列，并对照独立计算的预期值检查结果。
 
 测试集覆盖有分组和无分组聚合、速率、增长量、错误率比值、直方图分位数、过滤比较与 `bool`、`group_left` 向量匹配、集合运算、offset、固定 `@` 时间、子查询、clamp、转义标签值、缺失序列和标量算术。MetricsQL 另有 `default`、`if`、`ifnot`、`union` 和 23 个标签操作样例。标签检查包含有序复制与移动、缺失标签、空映射、转义值、完整匹配、替换捕获、非数字值和指标名处理。
 

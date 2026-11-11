@@ -68,13 +68,13 @@ the complete Python suite and offline examples. Test commands do not generate
 coverage or bytecode files by default.
 
 `conformance` additionally requires Go 1.24.2+ and `promtool` on PATH. CI pins Go
-1.25.3, Prometheus 3.15.0 and MetricsQL v0.87.4; the MetricsQL module is test-only.
+1.25.3, Prometheus 3.16.0 and MetricsQL v0.87.6; the MetricsQL module is test-only.
 This checks generated syntax with upstream parsers, not query execution or complete
 language coverage. Go caches and temporary rule files follow `CARGO_TARGET_DIR`'s
 parent directory by default; `GOCACHE`/`GOMODCACHE` can override the caches.
 
-CI also evaluates a synthetic corpus against isolated Prometheus 3.15.0 and
-VictoriaMetrics 1.153.0 servers through the SDK client. This checks values, labels
+CI also evaluates a synthetic corpus against isolated Prometheus 3.16.0 and
+VictoriaMetrics 1.156.0 servers through the SDK client. This checks values, labels
 and timestamps, including saved query text, sync/async calls and range evaluation.
 See [backend result validation](docs/backend-validation.md) for local reproduction.
 Backend failures block the existing conformance job and release gate; generated
@@ -101,7 +101,7 @@ branch or tag manually. Fixed-version conformance still runs on every PR in CI.
 
 For local reproduction, build the native SDK and run
 `python scripts/compatibility/check.py --output /path/outside/checkout/compatibility`.
-It requires curl, Go and promtool 3.15.0. `--offline` reuses that directory's verified
+It requires curl, Go and promtool 3.16.0. `--offline` reuses that directory's verified
 source snapshot. To check drift, download a previous artifact and pass
 `--compare /download/matrix.json --check`; no repository baseline is maintained.
 Missing signatures, unmatched topics and parser-rejected output fail. Backend-owned

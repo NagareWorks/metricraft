@@ -1,6 +1,7 @@
 //! Query text enters the builder's existing immutable graph, never a raw node.
 mod expressions;
 mod lexer;
+mod names;
 mod numbers;
 mod regex;
 mod selectors;
@@ -118,7 +119,11 @@ impl Expr {
             ));
         }
         let mut parser = Parser {
-            tokens: lexer::lex(source, options.max_tokens)?,
+            tokens: lexer::lex(
+                source,
+                options.max_tokens,
+                options.build.syntax_features & names::FEATURE != 0,
+            )?,
             index: 0,
             options,
             work: 0,

@@ -1,10 +1,24 @@
 # Language support
 
-The supported stable baseline is Prometheus **3.15.0** and VictoriaMetrics
-**1.153.0**, whose MetricsQL parser dependency is **v0.87.4**. The catalog covers
-all 90 PromQL functions and 14 aggregates, and all 195 documented MetricsQL
+The development branch targets Prometheus **3.16.0** and VictoriaMetrics
+**1.156.0**, whose MetricsQL parser dependency is **v0.87.6**. The catalog covers
+all 91 PromQL functions and 14 aggregates, and all 195 documented MetricsQL
 functions and 37 aggregates in this baseline. Use fluent methods or
 `Q.function(name, *args)`; both use the same native signature checks.
+
+These are the pinned verification targets, not an unrestricted `>=` version
+promise. The published **0.3.0** package targets Prometheus 3.15.0 /
+VictoriaMetrics 1.153.0; the changes below are unreleased. Older servers support
+the subset of calls available in their own version. In particular:
+
+| Capability | Server version and opt-in |
+| --- | --- |
+| `integral()` | Prometheus 3.16+, experimental functions |
+| `anchored` / `smoothed` | Stable in Prometheus 3.16; 3.15 needs the server's extended-range feature flag |
+| Unquoted Unicode/dotted input names | Prometheus 3.16+, `promql-unquoted-utf8-names` when parsing; generated names remain quoted |
+
+The 2026-11-11 audit found no function or aggregate catalog additions between
+VictoriaMetrics 1.153.0 and 1.156.0. Backend fixes remain the server's responsibility.
 
 Support is checked in both directions. The API reference marks MetricsQL-only
 methods as `vm_only` and PromQL-only methods as `prom_only`. For example,
@@ -13,9 +27,10 @@ are rejected in MetricsQL, including through `Q.function()` or nested expression
 Some shared methods also have dialect-specific argument forms; a method without
 an exclusive badge is not a guarantee that every call form works in both languages.
 
-This is a query builder and HTTP client, not a query evaluator or source-code
-parser. Backend calculations, storage, staleness and native-histogram data handling
-belong to the selected server. Existing query strings go directly to the client.
+This is a query builder and HTTP client with an unreleased
+[bounded PromQL parser and immutable AST editing API](query-parsing.md).
+Backend calculations, storage, staleness and native-histogram data handling
+belong to the selected server. Existing query strings can go directly to the client.
 Numeric/duration input formats are normalized; generated text has no comments or
 trailing commas. No raw-expression insertion API exists.
 
@@ -56,7 +71,7 @@ expression["Immutable expression"] --> mode{"Choose build dialect"}
   use `kind="string"` and can compose escaped selector values with `+`.
 
 Every derivation returns a new expression sharing Rust nodes. There is no source
-metric setter, mutable AST, global symbol registry or Python tree traversal.
+metric setter, mutable AST, global symbol registry or Python AST copy.
 
 ## Prometheus feature flags
 
@@ -73,8 +88,7 @@ text = (a + b).fill(0).build(
 text = a.range(Q.step().max_of(60) * 2).rate().build(
     "promql", features=("promql-duration-expr",))
 
-text = a.range("5m").anchored().rate().build(
-    "promql", features=("promql-extended-range-selectors",))
+text = a.range("5m").anchored().rate().build("promql")
 ```
 
 Duration expressions allow numbers, arithmetic, `step()`, `range()` (the
@@ -83,6 +97,15 @@ step/range, so choose a positive lower bound or execute a range query.
 Anchored ranges accept `rate`, `increase`, `delta`, `changes`, and `resets`;
 smoothed ranges accept `rate`, `increase`, and `delta`. Prometheus also supports
 smoothed instant selectors and histogram `.trim_lower()`/`.trim_upper()`.
+The old `promql-extended-range-selectors` SDK opt-in remains accepted for API
+compatibility, but is no longer required. Server versions before 3.16 still need
+their corresponding server flag.
+
+`.integral(window="5m", strategy=2)` integrates gauge samples in seconds.
+Strategies 0, 1 and 2 select left rectangle, right rectangle and trapezoidal
+rules; omitting the strategy uses 2. Scalar expressions are accepted. Invalid
+strategy values make Prometheus warn and fall back to 2. MetricsQL's existing
+`.integrate()` remains a separate backend function.
 
 `.histogram_quantiles(label, *quantiles)` selects the proper argument order during
 build: vector first for PromQL, vector last for MetricsQL. PromQL requires the
@@ -101,9 +124,10 @@ fixtures verify expected values, labels and timestamps. Missing names, signature
 gaps, unmatched topics and rejected probes fail the workflow.
 
 Reports, upstream snapshots and hashes are generated Actions artifacts, outside
-the library and unit-test suite. New unreleased upstream-main functions remain
-visible as `upstream_ahead`; currently this includes Prometheus `integral`, which
-is absent from 3.15.0. A baseline upgrade must add its implementation and execution
+the library and unit-test suite. New unreleased upstream-main functions and operators
+remain visible as `upstream_ahead`. The 2026-11-11 snapshot includes `bitand`,
+`bitor` and `bitxor`; these are absent from Prometheus 3.16.0 and are not yet
+supported. A baseline upgrade must add implementation and execution
 witnesses together. Passing witnesses do not prove every possible expression or
 numerical equivalence between PromQL and MetricsQL.
 

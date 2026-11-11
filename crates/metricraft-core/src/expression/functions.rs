@@ -29,6 +29,7 @@ pub(super) fn experimental(name: &str) -> bool {
             | "end"
             | "step"
             | "range"
+            | "integral"
     )
 }
 
@@ -68,6 +69,7 @@ pub(super) fn validate(name: &str, args: &[Expr]) -> Result<(Type, Option<Mode>)
             (&[Range], 1, 1, Instant, true)
         }
         "rollup" | "rollup_rate" => (&[Range, String], 1, 2, Instant, true),
+        "integral" => (&[Range, Scalar], 1, 2, Instant, false),
         "union" => (&[Instant], 0, usize::MAX, Instant, true),
         "holt_winters" => (&[Range, Scalar, Scalar], 3, 3, Instant, true),
         "double_exponential_smoothing" => (&[Range, Scalar, Scalar], 3, 3, Instant, false),
@@ -132,6 +134,7 @@ pub(super) fn validate(name: &str, args: &[Expr]) -> Result<(Type, Option<Mode>)
             | "min_of"
             | "max_of"
             | "range"
+            | "integral"
     ) || matches!(name, "sort_by_label" | "sort_by_label_desc") && args.len() == 1;
     if implicit_range && prom_only {
         return Err(format!("{name} requires an explicit range vector"));

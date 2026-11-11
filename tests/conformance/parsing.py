@@ -5,9 +5,10 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-FLAGS = "--enable-feature=promql-experimental-functions,promql-duration-expr,promql-extended-range-selectors,promql-binop-fill-modifiers"
+FLAGS = "--enable-feature=promql-experimental-functions,promql-duration-expr,promql-binop-fill-modifiers"
 DEFERRED = {"extension_duration_expression", "extension_duration_subquery", "extension_duration_offset"}
 POSITIVE = [
+    'integral(up[5m])', 'integral(up[5m], 0)', 'integral(up[5m], 1)', 'integral(up[5m], 2)',
     'sum by(on)(up)', 'a + on(group_left) b', 'sum by("on")(up)',
     'sum by(bool,atan2,by,offset)(up)',
     r'up{job="\uFFFD"}', r'up{job="\xef\xbf\xbd"}', r'{"\uFFFD"}',
@@ -40,6 +41,8 @@ POSITIVE = [
     r'up{job=~`\p{L}+`}', r'up{job=~`\Qapi.+\E`}', r'up{job=~`\141`}',
 ]
 NEGATIVE = [
+    'o\u0308', 'a\u0345', 'a١', 'ⅰ', '😀', '.name', '1name',
+    'up{a١="x"}', 'sum by(o\u0308)(up)',
     'up{job="\ufffd"}', '"\ufffd"', 'up{job=`\ufffd`}',
     '0x_1e', '0x1_e', '0x1_EF', '0x1E+2', '0x1E-2', '0x1E', '0xEE',
     r'{job=~`a+\Q\E?`}',
@@ -78,12 +81,13 @@ UNSUPPORTED = [
 ]
 
 
-def native(texts):
+def native(texts, utf8_names=False):
     """Hex framing also covers embedded newlines and non-ASCII string data."""
     target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
     subprocess.run(["cargo", "build", "-p", "metricraft-core", "--example", "parse_queries", "--locked"], cwd=ROOT, check=True)
     binary = target / "debug/examples" / ("parse_queries.exe" if os.name == "nt" else "parse_queries")
-    process = subprocess.run([str(binary)], input="".join(text.encode().hex() + "\n" for text in texts), text=True, capture_output=True)
+    command = [str(binary)] + (["--unquoted-utf8-names"] if utf8_names else [])
+    process = subprocess.run(command, input="".join(text.encode().hex() + "\n" for text in texts), text=True, capture_output=True)
     if process.returncode:
         raise AssertionError("native parser bridge failed:\n" + process.stderr)
     rows = [line.split("\t") for line in process.stdout.splitlines()]
@@ -92,11 +96,12 @@ def native(texts):
     return [(row[0], row[1] if row[0] == "err" else None, bytes.fromhex(row[-1]).decode()) for row in rows]
 
 
-def check_rules(texts, path, valid):
+def check_rules(texts, path, valid, utf8_names=False):
     path.write_text(json.dumps({"groups": [{"name": "parser", "rules": [
         {"record": "parser_" + str(i), "expr": text} for i, text in enumerate(texts)
     ]}]}, ensure_ascii=False), encoding="utf-8")
-    process = subprocess.run(["promtool", FLAGS, "check", "rules", "--lint=none", str(path)], capture_output=True, text=True, encoding="utf-8")
+    flags = FLAGS + (",promql-unquoted-utf8-names" if utf8_names else "")
+    process = subprocess.run(["promtool", flags, "check", "rules", "--lint=none", str(path)], capture_output=True, text=True, encoding="utf-8")
     if (process.returncode == 0) != valid:
         context = repr(texts) if len(texts) < 5 else str(len(texts)) + " queries"
         raise AssertionError("promtool acceptance differs: " + context + "\n" + process.stdout + process.stderr)
@@ -127,8 +132,34 @@ def check(generated, directory):
     for text, (status, kind, value) in zip(UNSUPPORTED, results[index:]):
         assert (status, kind) == ("err", "Unsupported"), (text, value)
     check_rules(accepted + UNSUPPORTED, directory / "parsed-rules.json", True)
+    check_names(directory)
     check_results(directory)
     print("Native PromQL parsing: {} generated roundtrips, {} explicit duration gaps, {} extra valid, {} invalid, {} unsupported witnesses.".format(len(originals) - len(deferred), len(deferred), len(POSITIVE), len(NEGATIVE), len(UNSUPPORTED)))
+
+
+def check_names(directory):
+    positive = [
+        'http.server.duration{service.name="api",区域="east"}',
+        'sum by(service.name,区域)(http.server.duration)',
+        '温度 + on(service.name) group_left(区域) 限额',
+        'foo..bar', 'foo.', 'Inf.total', 'NaN.total', 'K',
+    ]
+    # Newly assigned Unicode 17 letters must match the pinned Go tables.
+    for letter in ('\U00011db0', '\U0001e6c0', '\U000323b0'):
+        positive.extend([letter, 'up{' + letter + '="x"}', 'sum by(' + letter + ')(up)'])
+    negative = ['o\u0308', 'a\u0345', 'a١', 'ⅰ', '😀', '.name', '1name',
+                'sum by(foo:bar)(up)', 'sum without(:zone)(up)',
+                'a + on(foo:bar) group_left(:zone) b']
+    rendered = []
+    for source, (status, _, text) in zip(positive, native(positive, utf8_names=True)):
+        assert status == 'ok', (source, text)
+        rendered.append(text)
+    check_rules(positive + rendered, directory / 'utf8-names.json', True, utf8_names=True)
+    check_rules(rendered, directory / 'quoted-names.json', True)
+    for i, (source, (status, _, text)) in enumerate(zip(negative, native(negative, utf8_names=True))):
+        assert status == 'err', (source, text)
+        check_rules([source], directory / ('invalid-name-' + str(i) + '.json'), False, utf8_names=True)
+    print("Opt-in Unicode names: {} valid and {} invalid witnesses.".format(len(positive), len(negative)))
 
 
 def check_results(directory):
@@ -171,8 +202,7 @@ def check_results(directory):
 
 
 def check_extended_results(client, start, report, compare):
-    # promtool 3.15.0's test-rules engine does not inherit extended-range flags.
-    # Evaluate these pairs on the already running, explicitly enabled server.
+    # Compare parsed boundary modifiers using the running server's timestamps.
     inputs = [
         ('smoothed', 'sum(rate(mc_requests_total{job="api"}[5m] offset 1m smoothed))'),
         ('anchored', 'sum(rate(mc_requests_total{job="api"}[5m] @ ' + str(start + 600) + ' anchored))'),

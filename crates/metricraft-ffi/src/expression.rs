@@ -24,7 +24,7 @@ pub unsafe extern "C" fn mc_expr_inspect(
 ) -> *mut c_char {
     boundary(|| {
         let expr = expr.as_ref().ok_or("null expression")?;
-        if flags & !15 != 0 {
+        if flags & !31 != 0 {
             return Err("unknown build option flags".into());
         }
         let mode = match mode {
@@ -48,7 +48,7 @@ pub unsafe extern "C" fn mc_expr_inspect(
                         max_expanded_nodes: max_items,
                     },
                     experimental_functions: flags & 1 != 0,
-                    syntax_features: flags & 14,
+                    syntax_features: flags & 30,
                 },
             )?,
             _ => return Err("invalid diagnostic kind".into()),
@@ -138,7 +138,8 @@ pub unsafe extern "C" fn mc_expr_build_with_limits(
     mc_expr_build_with_options(expr, mode, max_output_bytes, max_expanded_nodes, 0)
 }
 
-/// Build flags: 0 experimental functions, 1 duration expressions, 2 extended ranges, 3 binary fill.
+/// Flag bits: 0 experimental functions, 1 duration expressions, 2 legacy ranges,
+/// 3 binary fill, 4 unquoted UTF-8 names (parser only).
 ///
 /// # Safety
 /// The expression pointer must remain valid for this call, as for mc_expr_build.
@@ -151,7 +152,7 @@ pub unsafe extern "C" fn mc_expr_build_with_options(
     flags: u32,
 ) -> *mut c_char {
     boundary(|| {
-        if flags & !15 != 0 {
+        if flags & !31 != 0 {
             return Err("unknown build option flags".into());
         }
         let expr = expr.as_ref().ok_or("null expression")?;
@@ -178,7 +179,7 @@ pub unsafe extern "C" fn mc_expr_build_with_options(
             BuildOptions {
                 limits,
                 experimental_functions: flags & 1 != 0,
-                syntax_features: flags & 14,
+                syntax_features: flags & 30,
             },
         )?)
         .map(CString::into_raw)

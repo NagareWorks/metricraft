@@ -31,7 +31,8 @@ See the [documentation](https://nagareworks.github.io/metricraft/) for
 installation and examples, and the [repository](https://github.com/NagareWorks/metricraft)
 for contributing guidance.
 GitHub Actions assembles native platform wheels and validates the supported
-Prometheus 3.15.0 / VictoriaMetrics 1.153.0 catalogs and syntax. The sdist includes
+Prometheus 3.16.0 / VictoriaMetrics 1.156.0 catalogs and syntax on the development
+branch (published 0.3.0 targets 3.15.0 / 1.153.0). The sdist includes
 the Python SDK, both Rust crates and the Cargo lockfile.
 
 Query timestamps preserve fractional seconds. Numeric times are epoch seconds;

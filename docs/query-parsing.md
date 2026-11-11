@@ -1,6 +1,6 @@
 # Query parsing: unreleased API
 
-The Rust core can parse a supported subset of **Prometheus 3.15.0 PromQL** into
+The Rust core can parse a supported subset of **Prometheus 3.16.0 PromQL** into
 the same immutable `Expr` graph used by the builder. This is development work
 for the next minor release. The development Python and C ABI bindings expose
 this parser; the published 0.3.0 package does not. MetricsQL parsing is not
@@ -126,9 +126,21 @@ Selectors, quoted UTF-8 names and strings, label matchers, numeric and duration
 literals, functions, aggregations with grouping, unary/binary operators,
 vector matching, literal ranges/subqueries, `offset`, and `@` enter structured
 nodes. Explicit build flags also govern supported experimental functions,
-extended range selectors and binary fill modifiers. Parsing never enables them
+and binary fill modifiers. Parsing never enables them
 automatically. Comments and source formatting are discarded; query evaluation
 and constant folding are not performed. The full input must be consumed.
+
+Prometheus 3.16's `anchored` and `smoothed` selectors parse without an opt-in.
+Pass `features=("promql-unquoted-utf8-names",)` to parse unquoted Unicode letters
+and non-leading dots in metric and label names. The rules also cover grouping
+and vector matching. Combining marks, non-ASCII digits and punctuation still
+require quoting; names retain their exact spelling without normalization.
+Letter classification uses Unicode 17, matching the pinned Prometheus binary.
+Under this opt-in, grouping and matching labels containing colons also require
+quotes; the legacy mode retains the upstream's older grouping-label behavior.
+The builder quotes these names, so this input-only flag need not be repeated
+when building the parsed query. Numeric `Inf`/`NaN` remain literals, while
+`Inf.total` and `NaN.total` are metric names.
 
 This is not a claim of complete PromQL or MetricsQL support. Explicit
 `Unsupported` errors cover MetricsQL mode, computed duration expressions,

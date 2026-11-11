@@ -95,10 +95,10 @@ def parse_queries(rows, output):
     version = run(["promtool", "--version"])
     if version.returncode:
         raise RuntimeError("could not identify PromQL oracle")
-    if not re.search(r"version 3\.15\.0\b", version.stdout + version.stderr):
-        raise RuntimeError("this matrix baseline requires promtool 3.15.0; upgrade the baseline and CI together")
+    if not re.search(r"version 3\.16\.0\b", version.stdout + version.stderr):
+        raise RuntimeError("this matrix baseline requires promtool 3.16.0; upgrade the baseline and CI together")
     return {"promql": (version.stdout + version.stderr).strip(),
-            "metricsql": "github.com/VictoriaMetrics/metricsql v0.87.4",
+            "metricsql": "github.com/VictoriaMetrics/metricsql v0.87.6",
             "experimental_functions": True, "positive_and_negative_controls": "passed"}
 
 
@@ -133,7 +133,7 @@ def changes(previous, current):
 def summary(report):
     lines = ["# Upstream compatibility matrix", "",
              "`sampled` means all listed witnesses built and parsed. It does not mean full language, overload, or evaluation support.",
-             "Scope: Prometheus 3.15.0 and VictoriaMetrics 1.153.0. `upstream_ahead` tracks unreleased main-branch additions.",
+             "Scope: Prometheus 3.16.0 and VictoriaMetrics 1.156.0. `upstream_ahead` tracks unreleased main-branch additions.",
              "`backend_owned` covers evaluation/storage policy; `canonical_output` covers source formatting. Unmatched topics fail the workflow.",
              "Parser witnesses do not prove values. The separate backend artifact checks executable signatures and independently calculated results.", "",
              "Snapshot: " + report["sources"]["fetched_at"], "",

@@ -64,12 +64,13 @@ NOTES = {
     "function": "Strings are literals. Use Q.from_metric('up') for an expression; function('rate', 'up[5m]') does not parse the argument as a query.",
     "from_scalar": "Native scalars use f64: Python integers outside exact IEEE-754 integer precision may round.",
     "histogram_quantile": "For classic Prometheus buckets retain the le label through aggregation. Native histogram support and interpolation belong to the backend.",
-    "anchored": "Requires features=('promql-extended-range-selectors',) and matching server support. Eligible rollups include rate, increase, delta, changes and resets.",
-    "smoothed": "Requires features=('promql-extended-range-selectors',) and matching server support. Eligible rollups include rate, increase and delta.",
+    "anchored": "Stable in Prometheus 3.16; earlier servers need their extended-range feature flag. The old SDK opt-in remains accepted. Eligible rollups include rate, increase, delta, changes and resets.",
+    "smoothed": "Stable in Prometheus 3.16; earlier servers need their extended-range feature flag. Eligible rollups include rate, increase and delta; instant selectors also accept it. Alert rules need a query offset so future boundary samples are available.",
 }
 for name in ("fill", "fill_left", "fill_right"):
     NOTES[name] = "Requires features=('promql-binop-fill-modifiers',) and matching server support."
 EXAMPLES = {
+    "integral": 'Q.from_metric("hourly_cost").integral("7d", strategy=2).build("promql", experimental_functions=True)',
     "node_kind": 'Q.parse("up > 10").node_kind()',
     "value_type": 'Q.parse("up > 10").value_type()',
     "children": 'Q.parse("up > 10").children()',

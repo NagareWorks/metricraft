@@ -72,7 +72,6 @@ register(en.PARAMETERS, {
     "max_expanded_nodes": "正整数表达式出现次数预算。None 使用 100,000；即使底层存储共享，每次渲染重复引用都计数。",
     "max_items": "正整数诊断工作预算，None 使用原生默认值。图检查计数节点、边和匹配器链接；位置输出计数渲染出现次数。",
     "experimental_functions": "启用 Prometheus 实验函数。后端也必须启用对应功能，此开关不配置服务器。",
-    "features": "显式功能名：'promql-experimental-functions'、'promql-duration-expr'、'promql-extended-range-selectors'、'promql-binop-fill-modifiers'。各项都需要对应服务器支持。请传集合，不要传单个字符串。",
     "build_options": "build() 接受的关键字选项，不含 mode（这里使用 standard）。预算和功能校验仍然生效。",
     "options": "debug_positions() 接受的关键字选项，包括 mode、预算和功能开关。",
     "source_code": "使用匹配选项构建当前表达式得到的精确文本，字符串不同会抛出 ValueError。",

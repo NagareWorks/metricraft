@@ -52,7 +52,7 @@ fn diagnostic_failures_preserve_owners_and_clear_after_success() {
         for (kind, mode, bytes, flags, expected) in [
             (3, 0, 0, 0, "diagnostic kind"),
             (0, 9, 0, 0, "query mode"),
-            (0, 0, 0, 16, "option flags"),
+            (0, 0, 0, 32, "option flags"),
             (0, 0, 1, 0, "max_output_bytes"),
         ] {
             assert!(mc_expr_inspect(root, kind, mode, bytes, 0, flags).is_null());
@@ -74,7 +74,7 @@ fn build_options_validate_flags_and_do_not_change_the_expression() {
         let label = make("string", "job", "", &[]);
         let query = make("call", "sort_by_label", "", &[metric, label]);
         assert!(!query.is_null());
-        assert!(mc_expr_build_with_options(query, 0, 0, 0, 16).is_null());
+        assert!(mc_expr_build_with_options(query, 0, 0, 0, 32).is_null());
         assert!(error_message().contains("unknown build option"));
         assert!(mc_expr_build(query, 0).is_null());
         assert!(error_message().contains("experimental_functions"));

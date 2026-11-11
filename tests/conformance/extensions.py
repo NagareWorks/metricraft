@@ -2,7 +2,7 @@
 from metricraft import QueryBuilder as Q
 
 FEATURES = (
-    "promql-duration-expr", "promql-extended-range-selectors",
+    "promql-duration-expr",
     "promql-binop-fill-modifiers",
 )
 

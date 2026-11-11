@@ -130,8 +130,6 @@ def test_duration_expression_rejects_unsupported_nodes(duration):
 
 
 @pytest.mark.parametrize("make,features", [
-    (lambda a,b: a.range("5m").anchored().rate(), EXTENDED),
-    (lambda a,b: a.range("5m").smoothed().rate(), EXTENDED),
     (lambda a,b: (a+b).fill(0), FILL),
 ])
 def test_experimental_syntax_is_prom_only_and_needs_its_own_flag(make, features):

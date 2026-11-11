@@ -13,6 +13,8 @@ default = []
 [dependencies]
 regex = "1.11"
 regex-syntax = "0.8"
+# Match the Unicode 17 category tables in Prometheus 3.16's Go 1.27 binary.
+unicode-properties = { version = "=0.1.4", default-features = false, features = ["general-category"] }
 
 [[test]]
 name = "memory_profile"

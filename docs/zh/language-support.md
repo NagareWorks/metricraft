@@ -1,10 +1,12 @@
 # 语言支持
 
-稳定基线为 Prometheus **3.15.0**、VictoriaMetrics **1.153.0**，后者的 MetricsQL 解析器依赖为 **v0.87.4**。目录覆盖该基线全部 90 个 PromQL 函数和 14 个聚合，以及文档列出的全部 195 个 MetricsQL 函数和 37 个聚合。链式方法与 `Q.function(name, *args)` 共用原生签名校验。
+稳定基线为 Prometheus **3.16.0**、VictoriaMetrics **1.156.0**，后者的 MetricsQL 解析器依赖为 **v0.87.6**。目录覆盖该基线全部 91 个 PromQL 函数和 14 个聚合，以及文档列出的全部 195 个 MetricsQL 函数和 37 个聚合。链式方法与 `Q.function(name, *args)` 共用原生签名校验。
 
 方言支持会双向检查。API 参考用 `vm_only` 标注 MetricsQL 专有方法，用 `prom_only` 标注 PromQL 专有方法。例如，该基线中的 `histogram_count()`、`histogram_sum()` 要求 PromQL，在 MetricsQL 中会被拒绝，通过 `Q.function()` 调用或嵌套使用也一样。部分共享方法还存在方言专有的参数形式，因此没有专有标记并不保证所有调用形式都支持两种语言。
 
-这是查询构建器与 HTTP 客户端，不是查询求值器或源码解析器。后端计算、存储、陈旧数据处理和原生直方图数据处理由所选服务器负责。现成的查询字符串直接交给客户端。数字与时长输入会规范化，生成文本不包含注释或尾随逗号，也没有插入原始表达式的 API。
+这是查询构建器与 HTTP 客户端，不是查询求值器。后端计算、存储、陈旧数据处理和原生直方图数据处理由所选服务器负责。现成的查询字符串直接交给客户端。数字与时长输入会规范化，生成文本不包含注释或尾随逗号，也没有插入原始表达式的 API。
+
+For the unreleased parser, current version scope and Prometheus 3.16 changes, see the maintained [English language support](../language-support.md) and [query parsing](../query-parsing.md) pages.
 
 ```mermaid
 flowchart TB
@@ -48,8 +50,7 @@ text = (a + b).fill(0).build(
 text = a.range(Q.step().max_of(60) * 2).rate().build(
     "promql", features=("promql-duration-expr",))
 
-text = a.range("5m").anchored().rate().build(
-    "promql", features=("promql-extended-range-selectors",))
+text = a.range("5m").anchored().rate().build("promql")
 ```
 
 时长表达式允许数字、算术、`step()`、`range()`（对应 `Q.query_range()` 工厂）、`min_of()` 和 `max_of()`。即时查询中的 step/range 为零，因此应指定正的下界，或者执行范围查询。
@@ -66,6 +67,6 @@ anchored 范围接受 `rate`、`increase`、`delta`、`changes`、`resets`；smo
 
 兼容性 Action 会发现官方函数目录和文档主题，构建有代表性的签名与语法，并交给上游解析器检查；随后向两个真实后端发送生成的调用，检查即时与范围请求是否被接受。另有独立测试数据验证预期数值、标签和时间戳。名称缺失、签名差异、未覆盖主题和被拒绝的探针都会导致检查失败。
 
-报告、上游快照和哈希作为 Actions 产物生成，不进入库或单元测试套件。上游主线尚未发布的新函数保留为 `upstream_ahead`；目前包括 Prometheus 的 `integral`，它不在 3.15.0 中。升级基线时必须同时增加实现与执行样例。样例通过不代表支持所有可能的表达式，也不证明 PromQL 与 MetricsQL 数值等价。
+报告、上游快照和哈希作为 Actions 产物生成，不进入库或单元测试套件。上游主线尚未发布的新函数保留为 `upstream_ahead`。升级基线时必须同时增加实现与执行样例。样例通过不代表支持所有可能的表达式，也不证明 PromQL 与 MetricsQL 数值等价。
 
 构建限制约束输出字节与 AST 展开次数，不限制应用仍持有的根节点、后端成本或服务器对 WITH 模板的展开。参见[内存](memory.md)、[后端验证](backend-validation.md)和[可运行示例](examples/03_language_extensions/README.md)。

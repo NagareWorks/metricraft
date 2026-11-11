@@ -29,6 +29,15 @@ class RollupMixin:
 
     @prom_only
     @prom_experimental
+    def integral(
+        self, window: Optional[Window] = None, *, strategy: Optional[ScalarInput] = None
+    ) -> QueryBuilder:
+        """Integrate gauge samples in seconds; strategy 0=left, 1=right, 2=trapezoidal."""
+        source = self.range(window) if window is not None else self
+        return self.function("integral", source, *(() if strategy is None else (strategy,)))
+
+    @prom_only
+    @prom_experimental
     def ts_of_first_over_time(self, window: Optional[Window] = None) -> QueryBuilder:
         return self._rollup("ts_of_first_over_time", window)
 

@@ -89,7 +89,7 @@ fn edit_rejections_do_not_mutate_inputs_or_skip_final_root_validation() {
                 ..Default::default()
             },
             McBuildOptions {
-                flags: 16,
+                flags: 32,
                 ..Default::default()
             },
         ] {

@@ -12,10 +12,11 @@ fn hex(text: &str) -> String {
 }
 
 fn main() {
+    let utf8_names = std::env::args().any(|arg| arg == "--unquoted-utf8-names");
     let options = ParseOptions {
         build: BuildOptions {
             experimental_functions: true,
-            syntax_features: 14,
+            syntax_features: 14 | if utf8_names { 16 } else { 0 },
             ..Default::default()
         },
         ..Default::default()

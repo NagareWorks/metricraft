@@ -165,7 +165,7 @@ def main():
     try:
         for key, executable in paths.items():
             version = subprocess.check_output([executable, "--version" if key != "victoria_metrics" else "-version"], stderr=subprocess.STDOUT, text=True, timeout=30)
-            pinned = "v1.153.0" if key == "victoria_metrics" else "version 3.15.0"
+            pinned = "v1.156.0" if key == "victoria_metrics" else "version 3.16.0"
             if not re.search(re.escape(pinned) + r"(?:[-\s,(]|$)", version):
                 raise RuntimeError(key + " must match pinned " + pinned)
             report["versions"][key] = version.strip()
@@ -215,7 +215,7 @@ def main():
     finally:
         (output / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
         lines = ["# Backend result conformance", "", "Status: " + report["status"], "",
-                 "Pinned Prometheus 3.15.0 / VictoriaMetrics 1.153.0; synthetic fixtures and independent expected values.", "",
+                 "Pinned Prometheus 3.16.0 / VictoriaMetrics 1.156.0; synthetic fixtures and independent expected values.", "",
                  "| Mode | Case | Status |", "| --- | --- | --- |"]
         lines += [f"| {row['mode']} | {row['name']} | {row['status']} |" for row in report["cases"]]
         if "catalog" in report:

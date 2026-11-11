@@ -129,7 +129,7 @@ pub unsafe extern "C" fn mc_expr_replace_at(
             _ => return Err("invalid query mode".into()),
         };
         let input = options.as_ref().copied().unwrap_or_default();
-        if input.flags & !15 != 0 {
+        if input.flags & !31 != 0 {
             return Err("unknown build option flags".into());
         }
         let defaults = BuildLimits::default();
@@ -140,7 +140,7 @@ pub unsafe extern "C" fn mc_expr_replace_at(
                 max_expanded_nodes: budget(input.max_expanded_nodes, defaults.max_expanded_nodes),
             },
             experimental_functions: input.flags & 1 != 0,
-            syntax_features: input.flags & 14,
+            syntax_features: input.flags & 30,
         };
         Ok(Box::into_raw(Box::new(expr.replace_at(
             path,

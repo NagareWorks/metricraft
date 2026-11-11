@@ -26,7 +26,11 @@ impl Token<'_> {
     }
 }
 
-pub(super) fn lex(source: &str, limit: usize) -> Result<Vec<Token<'_>>, ParseError> {
+pub(super) fn lex(
+    source: &str,
+    limit: usize,
+    extended_names: bool,
+) -> Result<Vec<Token<'_>>, ParseError> {
     let mut tokens = Vec::new();
     let mut pos = 0;
     let mut brackets = 0usize;
@@ -81,10 +85,10 @@ pub(super) fn lex(source: &str, limit: usize) -> Result<Vec<Token<'_>>, ParseErr
                 }
             }
             Value::Number(&source[start..pos])
-        } else if c.is_alphabetic() || c == '_' || c == ':' && brackets == 0 {
+        } else if super::names::start(c, extended_names) || c == ':' && brackets == 0 {
             pos += c.len_utf8();
             while let Some(c) = source[pos..].chars().next() {
-                if c.is_alphanumeric() || c == '_' || c == ':' && brackets == 0 {
+                if super::names::continuation(c, extended_names) || c == ':' && brackets == 0 {
                     pos += c.len_utf8();
                 } else {
                     break;

@@ -1,6 +1,7 @@
 """Editorial API descriptions. Missing entries fail generation instead of showing empty cards."""
 
 PURPOSES = {
+    "integral": "Integrate gauge samples over time in seconds with a selectable quadrature rule. Prometheus 3.16+ requires experimental-functions; MetricsQL's integrate() is a separate function.",
     "node_kind": "Read the native AST node category, such as selector, function, aggregate or binary. Unreleased.",
     "value_type": "Read the query value category used to validate composition and non-root replacements. Unreleased.",
     "children": "Read ordered direct expression children as independent owners sharing their native nodes. Unreleased.",

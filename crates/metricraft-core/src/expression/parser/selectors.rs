@@ -3,14 +3,9 @@ use super::{Expr, ParseErrorKind as Error, Parser, Result, Value};
 
 impl Parser<'_> {
     fn label(&mut self, grouping: bool) -> Result<String> {
+        let extended = self.options.build.syntax_features & super::names::FEATURE != 0;
         let value = match &self.current().value {
-            Value::Word(value)
-                if if grouping {
-                    grouping_label(value)
-                } else {
-                    super::super::identifier(value, false)
-                } =>
-            {
+            Value::Word(value) if super::names::valid(value, grouping && !extended, extended) => {
                 (*value).to_owned()
             }
             Value::String(value) => value.clone(),
@@ -99,12 +94,4 @@ impl Parser<'_> {
         }
         Ok(selector)
     }
-}
-
-fn grouping_label(value: &str) -> bool {
-    let mut bytes = value.bytes();
-    bytes
-        .next()
-        .is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, b'_' | b':'))
-        && bytes.all(|c| c.is_ascii_alphanumeric() || matches!(c, b'_' | b':'))
 }

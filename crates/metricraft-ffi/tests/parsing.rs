@@ -1,4 +1,4 @@
-use metricraft_ffi::expression::{mc_expr_build, mc_expr_free};
+use metricraft_ffi::expression::{mc_expr_build, mc_expr_build_with_options, mc_expr_free};
 use metricraft_ffi::parsing::{mc_expr_parse, McParseErrorInfo, McParseOptions};
 use metricraft_ffi::{mc_abi_version, mc_error_free, mc_last_error, mc_string_free};
 use std::{ffi::CStr, ptr};
@@ -12,6 +12,31 @@ unsafe fn message() -> String {
         .to_owned();
     mc_error_free(error);
     text
+}
+
+#[test]
+fn computed_durations_reuse_the_existing_abi_and_feature_bit() {
+    unsafe {
+        let source = b"up[range():step()] offset (1h*2)";
+        let mut info = McParseErrorInfo::default();
+        assert!(mc_expr_parse(source.as_ptr(), source.len(), 0, ptr::null(), &mut info).is_null());
+        assert_eq!(info.kind, 2);
+        let options = McParseOptions {
+            flags: 2,
+            ..McParseOptions::default()
+        };
+        let expr = mc_expr_parse(source.as_ptr(), source.len(), 0, &options, &mut info);
+        assert!(!expr.is_null(), "{}", message());
+        assert_eq!(info.kind, 0);
+        let output = mc_expr_build_with_options(expr, 0, 0, 0, 2);
+        assert!(!output.is_null(), "{}", message());
+        assert_eq!(
+            CStr::from_ptr(output).to_str().unwrap(),
+            "(up)[range():step()] offset ((3600 * 2))"
+        );
+        mc_string_free(output);
+        mc_expr_free(expr);
+    }
 }
 
 #[test]

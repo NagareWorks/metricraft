@@ -183,11 +183,17 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
             let protect_sign = binary.op == "^"
                 && (matches!(binary.lhs.0.kind, Kind::Unary(..))
                     || matches!(binary.lhs.0.kind, Kind::Number(n) if n.is_sign_negative()));
-            if protect_sign {
+            // A parenthesized computed offset greedily consumes following
+            // duration arithmetic in PromQL. Isolate the whole left operand.
+            let protect_offset = matches!(
+                &binary.lhs.0.kind,
+                Kind::Extra(super::Extra::Offset(..))
+            ) || matches!(&binary.lhs.0.kind, Kind::At(child, _) if matches!(child.0.kind, Kind::Extra(super::Extra::Offset(..))));
+            if protect_sign || protect_offset {
                 emit(Text("("));
             }
             emit(Child(&binary.lhs));
-            if protect_sign {
+            if protect_sign || protect_offset {
                 emit(Text(")"));
             }
             emit(Text(" "));

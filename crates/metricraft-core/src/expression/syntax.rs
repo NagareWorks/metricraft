@@ -73,11 +73,10 @@ impl Extra {
             Self::Subquery(a, b, c) => {
                 emit(Text("("));
                 emit(Child(a));
-                // Prometheus 3.15's duration lexer requires a numeric token
-                // before the colon, even when the window is just range().
-                emit(Text(")[(0 + "));
+                // Prometheus 3.16 accepts duration functions before the colon.
+                emit(Text(")["));
                 emit(DurationChild(b));
-                emit(Text("):"));
+                emit(Text(":"));
                 if let Some(c) = c {
                     emit(DurationChild(c));
                 }

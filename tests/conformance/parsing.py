@@ -6,8 +6,19 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 FLAGS = "--enable-feature=promql-experimental-functions,promql-duration-expr,promql-binop-fill-modifiers"
-DEFERRED = {"extension_duration_expression", "extension_duration_subquery", "extension_duration_offset"}
 POSITIVE = [
+    'up offset (1h) + 2', '(up offset (1h)) + 2',
+    'up offset -(2)^2 + 1', 'up offset --2^2 + 1',
+    'up offset step() @ 0 + 1', 'up @ 0 offset step() + 1',
+    'up[+1]', 'up[(step())]', 'up[1+1]', 'up[5m:step()]', 'up offset (1h*2)',
+    'up[range():step()]', 'up[range():]', 'up[step():5m]', 'up[+5m:+1m]',
+    'up[((0))]', 'up[-(0)]', 'up[1/(0)]', 'up[1%(-0)]',
+    'up[2^3^2]', 'up[(-2)^2]', 'up[-2^2]', 'up[2^-2]',
+    'up[min_of(range(), max_of(step(), 5m))]',
+    'up offset -2^2', 'up offset -(1h*2)', 'up offset step()^2',
+    'up offset min_of(1h,2*step())', 'up offset (0)',
+    'rate(up[5m*2] offset (step()) @ end() smoothed)',
+    'rate(up[5m] @ start() offset (1h*2) anchored)',
     'integral(up[5m])', 'integral(up[5m], 0)', 'integral(up[5m], 1)', 'integral(up[5m], 2)',
     'sum by(on)(up)', 'a + on(group_left) b', 'sum by("on")(up)',
     'sum by(bool,atan2,by,offset)(up)',
@@ -41,6 +52,11 @@ POSITIVE = [
     r'up{job=~`\p{L}+`}', r'up{job=~`\Qapi.+\E`}', r'up{job=~`\141`}',
 ]
 NEGATIVE = [
+    'up offset (1h) + down',
+    'up[1/0]', 'up[1%-0]', 'up[0]', 'up[-1]', 'up[1:0]',
+    'up[abs(1)]', 'up[up]', 'up[step(1)]', 'up[min_of(1)]',
+    'up[max_of(1,2,3)]', 'up[1>0]', 'up[1 + on() 2]',
+    'up[9223372037+1]', 'up @ (1+2)', 'up offset (1+2) offset 1',
     'o\u0308', 'a\u0345', 'a١', 'ⅰ', '😀', '.name', '1name',
     'up{a١="x"}', 'sum by(o\u0308)(up)',
     'up{job="\ufffd"}', '"\ufffd"', 'up{job=`\ufffd`}',
@@ -73,9 +89,8 @@ UNSUPPORTED = [
     '{job=~"a{00}"}', 'up{job=~"a{01}"}', 'up{job=~"a{0,01}"}',
     'up{job=~"a{01,2}"}', 'up{job=~"a{00,}"}', 'up{job=~"a{00,01}"}',
     'up{job=~"a{01}*"}',
-    'up[+1]', 'up offset NaN', r'up{job=~`\12`}',
+    'up offset NaN', r'up{job=~`\12`}',
     r'up{job=~`(?ii)a`}', r'up{job=~`(?P<x>a)(?P<x>b)`}',
-    'up[(step())]', 'up[1+1]', 'up[5m:step()]', 'up offset (1h*2)',
     'up offset 0[5m]', 'up smoothed[5m]', 'sum by(job,job)(up)',
     r'up{job="\xff"}', r'up{job=~"[a&&b]"}', r'up{job=~`\p{Greek}`}',
 ]
@@ -111,15 +126,10 @@ def check(generated, directory):
     originals = [(name, text) for name, text, mode in generated if mode == "promql"]
     all_texts = [text for _, text in originals] + POSITIVE + NEGATIVE + UNSUPPORTED
     results = native(all_texts)
-    accepted, deferred = [], set()
+    accepted = []
     for (name, text), (status, kind, value) in zip(originals, results):
-        if name in DEFERRED:
-            assert (status, kind) == ("err", "Unsupported"), (name, value)
-            deferred.add(name)
-        else:
-            assert status == "ok", (name, text, kind, value)
-            accepted.append(value)
-    assert deferred == DEFERRED
+        assert status == "ok", (name, text, kind, value)
+        accepted.append(value)
     index = len(originals)
     for text, (status, _, value) in zip(POSITIVE, results[index:]):
         assert status == "ok", (text, value)
@@ -134,7 +144,7 @@ def check(generated, directory):
     check_rules(accepted + UNSUPPORTED, directory / "parsed-rules.json", True)
     check_names(directory)
     check_results(directory)
-    print("Native PromQL parsing: {} generated roundtrips, {} explicit duration gaps, {} extra valid, {} invalid, {} unsupported witnesses.".format(len(originals) - len(deferred), len(deferred), len(POSITIVE), len(NEGATIVE), len(UNSUPPORTED)))
+    print("Native PromQL parsing: {} generated roundtrips, {} extra valid, {} invalid, {} unsupported witnesses.".format(len(originals), len(POSITIVE), len(NEGATIVE), len(UNSUPPORTED)))
 
 
 def check_names(directory):
@@ -182,6 +192,21 @@ def check_results(directory):
         ('requests_total{instance="a"} @ 120 offset 60s', samples('requests_total{job="api",instance="a"}', 60)),
         ('max_over_time((sum(rate(requests_total[2m])))[5m:1m])', samples("{}", 3)),
         ('sum by(job)(rate(requests_total[5m])) > 200', []),
+        ('requests_total{instance="a"} @ 120 offset step() + 1', samples('{job="api",instance="a"}', 121)),
+        ('requests_total{instance="a"} offset step() @ 120 + 1', samples('{job="api",instance="a"}', 121)),
+        ('requests_total{instance="a"} @ 120 offset (60s) + 1', samples('requests_total{job="api",instance="a"}', 0)),
+        ('(requests_total{instance="a"} @ 120 offset (60s)) + 1', samples('{job="api",instance="a"}', 61)),
+        ('requests_total{instance="a"} @ 120 offset -(2)^2', samples('{job="api",instance="a"}', 14400)),
+        ('requests_total{instance="a"} @ 120 offset +(2)^2', samples('{job="api",instance="a"}', 3600)),
+        ('requests_total{instance="a"} @ 120 offset -(2) * 2', samples('{job="api",instance="a"}', 240)),
+        ('requests_total{instance="a"} @ 120 offset --2^2 + 1', samples('requests_total{job="api",instance="a"}', 60)),
+        ('sum(count_over_time(requests_total[2^3^2]))', samples("{}", 18)),
+        ('sum(count_over_time(requests_total[(2^3)^2]))', samples("{}", 4)),
+        ('sum(rate(requests_total[max_of(step(), 5m)]))', samples("{}", 3)),
+        ('max_over_time((sum(rate(requests_total[2m])))[5m*1:30s*2])', samples("{}", 3)),
+        ('requests_total{instance="a"} @ 120 offset (30s*2)', samples('requests_total{job="api",instance="a"}', 60)),
+        ('requests_total{instance="a"} @ 120 offset 60s + 1', samples('{job="api",instance="a"}', 61)),
+        ('requests_total{instance="a"} @ 120 offset (60s + 1)', samples('requests_total{job="api",instance="a"}', 0)),
     ]
     normalized = native([text for text, _ in cases])
     checks = []
@@ -218,4 +243,23 @@ def check_extended_results(client, start, report, compare):
             result = client.query(query, time=start + 600)
             row[key] = result.data
             compare(result, row["expected"], start + 600)
+        row["status"] = "passed"
+
+    # Query-time step()/range() must retain their meaning after normalization.
+    dynamic = [
+        ('duration_step', 'sum(mc_temperature{job="api"} offset step())', [21, 24, 27]),
+        ('duration_range', 'sum(mc_temperature{job="api"} offset range())', [18, 21, 24]),
+    ]
+    for (name, source, values), (status, _, text) in zip(dynamic, native([q for _, q, _ in dynamic])):
+        assert status == "ok", (source, text)
+        expected = [[start + 480 + 60 * i, value] for i, value in enumerate(values)]
+        row = {"mode": "promql", "name": "parser_" + name, "source": source,
+               "query": text, "expected": expected, "status": "failed"}
+        report["cases"].append(row)
+        for key, query in (("original", source), ("actual", text)):
+            result = client.query_range(query, start=start + 480, end=start + 600, step="60s")
+            row[key] = result.data
+            assert result.is_success and not result.is_partial and result.result_type == "matrix", row
+            assert len(result.result) == 1 and result.result[0]["metric"] == {}, row
+            assert [[float(t), float(v)] for t, v in result.result[0]["values"]] == expected, row
         row["status"] = "passed"

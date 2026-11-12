@@ -1,6 +1,6 @@
-//! Literal ranges, subqueries and time modifiers. Computed durations are explicit gaps.
+//! Ranges, subqueries and time modifiers backed by the shared expression graph.
 use super::super::{Extra, Kind};
-use super::{Expr, ParseErrorKind as Error, Parser, Result, Value};
+use super::{Expr, ParseErrorKind as Error, Parser, Result};
 
 impl Parser<'_> {
     pub(super) fn postfix(
@@ -8,6 +8,7 @@ impl Parser<'_> {
         start: usize,
         mut expr: Expr,
         mut grouped: bool,
+        depth: usize,
     ) -> Result<Expr> {
         loop {
             if grouped
@@ -19,17 +20,29 @@ impl Parser<'_> {
                 ));
             }
             if self.eat("[") {
-                let window = self.duration()?;
+                let window = self.duration(0, depth + 1)?;
                 if self.eat(":") {
                     let step = if self.is("]") {
-                        String::new()
+                        None
                     } else {
-                        self.duration()?
+                        Some(self.duration(0, depth + 1)?)
                     };
-                    self.duration_end("]")?;
-                    expr = self.apply(start, "subquery", &window, &step, &[expr])?;
+                    self.expect("]")?;
+                    if let Some(literal) = window.literal() {
+                        if step.as_ref().is_none_or(|s| s.literal().is_some()) {
+                            let step = step.as_ref().and_then(|s| s.literal()).unwrap_or("");
+                            expr = self.apply(start, "subquery", literal, step, &[expr])?;
+                            grouped = false;
+                            continue;
+                        }
+                    }
+                    let mut args = vec![expr, window.into_expr(self)?];
+                    if let Some(step) = step {
+                        args.push(step.into_expr(self)?);
+                    }
+                    expr = self.apply(start, "subquery_expr", "", "", &args)?;
                 } else {
-                    self.duration_end("]")?;
+                    self.expect("]")?;
                     if grouped {
                         return Err(self.error(
                             Error::Syntax,
@@ -41,21 +54,22 @@ impl Parser<'_> {
                     {
                         return Err(self.error(Error::Unsupported, "time modifiers before a range are not supported; place them after the range"));
                     }
-                    expr = self.apply(start, "range", &window, "", &[expr])?;
+                    expr = if let Some(literal) = window.literal() {
+                        self.apply(start, "range", literal, "", &[expr])?
+                    } else {
+                        let window = window.into_expr(self)?;
+                        self.apply(start, "range_expr", "", "", &[expr, window])?
+                    };
                 }
                 grouped = false;
             } else if self.eat("offset") {
-                let negative = self.eat("-");
-                if !negative {
-                    self.eat("+");
-                }
-                let duration = self.duration()?;
-                let duration = if negative {
-                    format!("-{duration}")
+                let duration = self.offset_duration(depth + 1)?;
+                expr = if let Some(literal) = duration.literal() {
+                    self.apply(start, "offset", literal, "", &[expr])?
                 } else {
-                    duration
+                    let duration = duration.into_expr(self)?;
+                    self.apply(start, "offset_expr", "", "", &[expr, duration])?
                 };
-                expr = self.apply(start, "offset", &duration, "", &[expr])?;
             } else if self.eat("@") {
                 let value = if self.is("start") || self.is("end") {
                     let value = self.current().text().to_ascii_lowercase();
@@ -82,44 +96,6 @@ impl Parser<'_> {
         Ok(expr)
     }
 
-    fn duration(&mut self) -> Result<String> {
-        if self.is("nan") {
-            return Err(self.error(
-                Error::Unsupported,
-                "non-finite durations cannot be represented by the AST",
-            ));
-        }
-        let Value::Number(text) = self.current().value else {
-            return Err(self.error(
-                if self.is("(")
-                    || self.is("+")
-                    || self.is("-")
-                    || self.is("step")
-                    || self.is("range")
-                    || self.is("min_of")
-                    || self.is("max_of")
-                {
-                    Error::Unsupported
-                } else {
-                    Error::Syntax
-                },
-                "expected a literal duration; computed duration parsing is not implemented yet",
-            ));
-        };
-        let value =
-            super::numbers::number(text).map_err(|message| self.error(Error::Syntax, message))?;
-        if !value.is_finite() || value > 9_223_372_036.854_776 {
-            return Err(self.error(Error::Validation, "duration out of range"));
-        }
-        let text = if super::super::classic_duration(text) {
-            text.to_owned()
-        } else {
-            value.to_string()
-        };
-        self.index += 1;
-        Ok(text)
-    }
-
     fn suffix(&mut self, start: usize, expr: Expr, op: &str) -> Result<Expr> {
         // offset and @ decorate the same selector in PromQL regardless of order.
         // There can be at most one of each before this suffix.
@@ -138,17 +114,11 @@ impl Parser<'_> {
                 };
                 self.apply(start, wrapper, value, "", &[inner])
             }
+            Kind::Extra(Extra::Offset(child, value)) => {
+                let inner = self.suffix(start, child.clone(), op)?;
+                self.apply(start, "offset_expr", "", "", &[inner, value.clone()])
+            }
             _ => self.apply(start, op, "", "", &[expr]),
         }
-    }
-
-    fn duration_end(&mut self, end: &str) -> Result<()> {
-        if matches!(self.current().text(), "+" | "-" | "*" | "/" | "%" | "^") {
-            return Err(self.error(
-                Error::Unsupported,
-                "computed duration parsing is not implemented yet",
-            ));
-        }
-        self.expect(end)
     }
 }

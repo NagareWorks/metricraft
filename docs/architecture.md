@@ -176,7 +176,8 @@ See [the workflow guide](../CONTRIBUTING.md#github-actions) for targets and trig
 
 The next release's [Rust query parser](query-parsing.md) reads a supported PromQL
 subset into this same graph for immutable editing, with Python and C ABI bindings.
-Computed PromQL durations and MetricsQL text parsing remain follow-up work.
+Computed PromQL durations use the same graph and opt-in feature checks.
+MetricsQL text parsing remains follow-up work.
 
 Public query validation raises `TypeError` or `ValueError`; native loading failures
 raise `RuntimeError`.

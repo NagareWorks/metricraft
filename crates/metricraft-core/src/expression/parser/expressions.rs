@@ -10,7 +10,7 @@ impl Parser<'_> {
         let start = self.current().start;
         let grouped = self.is("(");
         let atom = self.atom(depth)?;
-        let mut left = self.postfix(start, atom, grouped)?;
+        let mut left = self.postfix(start, atom, grouped, depth)?;
         loop {
             let op = self.current().text().to_ascii_lowercase();
             let power = match op.as_str() {

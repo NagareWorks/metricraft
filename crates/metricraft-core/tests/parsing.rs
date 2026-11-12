@@ -133,10 +133,6 @@ fn unsupported_and_dialect_errors_are_explicit() {
         ParseErrorKind::Unsupported
     );
     assert_eq!(
-        Expr::parse("up[(step())]", Mode::PromQl).unwrap_err().kind,
-        ParseErrorKind::Unsupported
-    );
-    assert_eq!(
         Expr::parse("median(up)", Mode::PromQl).unwrap_err().kind,
         ParseErrorKind::Dialect
     );

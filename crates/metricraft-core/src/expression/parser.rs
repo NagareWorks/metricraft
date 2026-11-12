@@ -1,4 +1,5 @@
 //! Query text enters the builder's existing immutable graph, never a raw node.
+mod durations;
 mod expressions;
 mod lexer;
 mod names;
@@ -82,7 +83,8 @@ impl Default for ParseOptions {
 
 impl Expr {
     /// Parse PromQL into the same graph used by builders and `replace_at`.
-    /// MetricsQL parsing and computed duration syntax are not implemented yet.
+    /// Computed durations require the `promql-duration-expr` build feature.
+    /// MetricsQL parsing is not implemented yet.
     /// Formatting/comments are discarded; no raw-expression fallback is used.
     /// See `docs/query-parsing.md` for the supported subset and other limitations.
     pub fn parse(source: &str, mode: Mode) -> Result<Self> {

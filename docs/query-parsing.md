@@ -124,7 +124,7 @@ retain an unbounded global cache. Applications own loading and saving query text
 
 Selectors, quoted UTF-8 names and strings, label matchers, numeric and duration
 literals, functions, aggregations with grouping, unary/binary operators,
-vector matching, literal ranges/subqueries, `offset`, and `@` enter structured
+vector matching, ranges/subqueries, `offset`, and `@` enter structured
 nodes. Explicit build flags also govern supported experimental functions,
 and binary fill modifiers. Parsing never enables them
 automatically. Comments and source formatting are discarded; query evaluation
@@ -142,8 +142,37 @@ The builder quotes these names, so this input-only flag need not be repeated
 when building the parsed query. Numeric `Inf`/`NaN` remain literals, while
 `Inf.total` and `NaN.total` are metric names.
 
+Computed durations in range windows, subquery windows/steps and `offset` accept
+`+`, `-`, `*`, `/`, `%`, `^`, parentheses, `step()`, `range()`, `min_of(a, b)` and
+`max_of(a, b)`, following the pinned Prometheus 3.16 grammar. Pass
+`features=("promql-duration-expr",)` to both parsing and building; the server
+must enable the same feature. `@` still accepts a literal or `start()`/`end()`.
+For offsets, enclose the complete duration calculation in parentheses: `up offset 1h + 2` adds two to the
+selected samples, while `up offset (1h + 2)` changes the offset. Prometheus also
+consumes following duration arithmetic after a leading parenthesized operand:
+`up offset (1h) + 2` changes the offset too. To add to samples after a computed
+offset, group the complete selector: `(up offset (1h)) + 2`. The renderer adds
+this grouping when needed.
+
+```python
+from metricraft import QueryBuilder as Q
+
+features = ("promql-duration-expr",)
+query = Q.parse("rate(http_requests_total[5m * 2])", features=features)
+edited = query.replace_at([0, 1, 1], Q.from_scalar(3), "promql", features=features)
+assert edited.build("promql", features=features) == "rate(http_requests_total[(300 * 3)])"
+assert edited.at_path([0, 0]).shares_node(query.at_path([0, 0]))
+```
+
+Computed durations are ordinary immutable children, so editing an operand shares
+the selector and every unchanged operand. Literal durations remain metadata on
+the existing nodes. Duration arithmetic is not constant-folded; positivity and
+query-time values such as `step()` remain the server's responsibility, except
+for invalid literal windows/steps and literal division or modulo by zero, which
+are rejected while parsing. Redundant parentheses and literal signs may normalize.
+
 This is not a claim of complete PromQL or MetricsQL support. Explicit
-`Unsupported` errors cover MetricsQL mode, computed duration expressions,
+`Unsupported` errors cover MetricsQL mode,
 duplicate grouping labels, zero offsets or extended modifiers placed before a
 range, non-finite durations, and non-UTF-8 bytes in strings. Regex validation currently supports a
 conservative RE2 subset: empty quoted blocks, leading-zero repetition counts,

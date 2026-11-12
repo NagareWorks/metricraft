@@ -96,12 +96,14 @@ UNSUPPORTED = [
 ]
 
 
-def native(texts, utf8_names=False):
+def native(texts, utf8_names=False, mode="promql"):
     """Hex framing also covers embedded newlines and non-ASCII string data."""
     target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
     subprocess.run(["cargo", "build", "-p", "metricraft-core", "--example", "parse_queries", "--locked"], cwd=ROOT, check=True)
     binary = target / "debug/examples" / ("parse_queries.exe" if os.name == "nt" else "parse_queries")
     command = [str(binary)] + (["--unquoted-utf8-names"] if utf8_names else [])
+    if mode == "metricsql":
+        command.append("--metricsql")
     process = subprocess.run(command, input="".join(text.encode().hex() + "\n" for text in texts), text=True, capture_output=True)
     if process.returncode:
         raise AssertionError("native parser bridge failed:\n" + process.stderr)

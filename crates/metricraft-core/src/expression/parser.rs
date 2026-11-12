@@ -2,6 +2,7 @@
 mod durations;
 mod expressions;
 mod lexer;
+mod metricsql;
 mod names;
 mod numbers;
 mod regex;
@@ -82,9 +83,8 @@ impl Default for ParseOptions {
 }
 
 impl Expr {
-    /// Parse PromQL into the same graph used by builders and `replace_at`.
+    /// Parse supported PromQL/MetricsQL into the graph used by `replace_at`.
     /// Computed durations require the `promql-duration-expr` build feature.
-    /// MetricsQL parsing is not implemented yet.
     /// Formatting/comments are discarded; no raw-expression fallback is used.
     /// See `docs/query-parsing.md` for the supported subset and other limitations.
     pub fn parse(source: &str, mode: Mode) -> Result<Self> {
@@ -112,27 +112,34 @@ impl Expr {
                 "input byte limit exceeded",
             ));
         }
-        if mode != Mode::PromQl {
-            return Err(ParseError::kind(
-                ParseErrorKind::Unsupported,
-                0,
-                source.len(),
-                "MetricsQL parsing is not implemented yet",
-            ));
-        }
         let mut parser = Parser {
+            source,
+            mode,
             tokens: lexer::lex(
                 source,
                 options.max_tokens,
-                options.build.syntax_features & names::FEATURE != 0,
+                mode == Mode::PromQl && options.build.syntax_features & names::FEATURE != 0,
+                mode,
             )?,
             index: 0,
             options,
             work: 0,
         };
-        let expr = parser.expression(0, 0)?;
+        let expr = parser.expression(-1, 0)?;
         if !matches!(parser.current().value, Value::End) {
-            return Err(parser.error(ParseErrorKind::Syntax, "unexpected trailing input"));
+            return Err(parser.error(
+                if mode == Mode::MetricsQl
+                    && matches!(
+                        parser.current().text().to_ascii_lowercase().as_str(),
+                        "keep_metric_names" | "limit" | "prefix"
+                    )
+                {
+                    ParseErrorKind::Unsupported
+                } else {
+                    ParseErrorKind::Syntax
+                },
+                "unexpected or unsupported trailing input",
+            ));
         }
         expr.build_with_options(mode, options.build)
             .map_err(|message| {
@@ -144,6 +151,8 @@ impl Expr {
 
 type Result<T> = std::result::Result<T, ParseError>;
 struct Parser<'a> {
+    source: &'a str,
+    mode: Mode,
     tokens: Vec<Token<'a>>,
     index: usize,
     options: ParseOptions,
@@ -205,12 +214,20 @@ impl Parser<'_> {
         let end = self.tokens[self.index.saturating_sub(1)].end.max(start);
         let expr = Expr::apply(op, a, b, args)
             .map_err(|message| ParseError::kind(ParseErrorKind::Validation, start, end, message))?;
-        if expr.0.required_mode == Some(Mode::MetricsQl) {
+        if expr
+            .0
+            .required_mode
+            .is_some_and(|required| required != self.mode)
+        {
             return Err(ParseError::kind(
                 ParseErrorKind::Dialect,
                 start,
                 end,
-                "expression requires MetricsQL",
+                if self.mode == Mode::PromQl {
+                    "expression requires MetricsQL"
+                } else {
+                    "expression requires PromQL"
+                },
             ));
         }
         let complexity = expr.complexity();

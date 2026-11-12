@@ -105,11 +105,27 @@ fn valid_name(s: &str) -> bool {
 }
 
 fn identifier(s: &str, metric: bool) -> bool {
+    // Keep modifier-looking metric names as __name__ matchers. Both dialects
+    // recognize keywords without regard to case; VM also reads `prefix` after
+    // a join modifier. Quoting the name works in every expression position.
     if metric
-        && (matches!(s, "bool" | "on" | "ignoring" | "group_left" | "group_right")
-            || ["with", "inf", "nan"]
-                .iter()
-                .any(|word| s.eq_ignore_ascii_case(word)))
+        && [
+            "bool",
+            "on",
+            "ignoring",
+            "group_left",
+            "group_right",
+            "prefix",
+            "fill",
+            "fill_left",
+            "fill_right",
+            "with",
+            "inf",
+            "nan",
+        ]
+        .iter()
+        .chain(aggregation::NAMES)
+        .any(|word| s.eq_ignore_ascii_case(word))
     {
         return false;
     }

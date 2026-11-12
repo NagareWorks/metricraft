@@ -152,7 +152,11 @@ impl Parser<'_> {
         {
             return Err(self.error(Error::Syntax, "expected a numeric or duration literal"));
         }
-        let value = number(text).map_err(|message| self.error(Error::Syntax, message))?;
+        let value = if self.mode == super::Mode::MetricsQl {
+            self.vm_number(self.current().start, text)?
+        } else {
+            number(text).map_err(|message| self.error(Error::Syntax, message))?
+        };
         self.index += 1;
         Ok(if negative { -value } else { value })
     }

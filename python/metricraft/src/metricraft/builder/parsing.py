@@ -40,9 +40,9 @@ class ParsingMixin:
         max_output_bytes: Optional[int] = None, max_expanded_nodes: Optional[int] = None,
         experimental_functions: bool = False, features: Iterable[str] = (),
     ) -> QueryBuilder:
-        """Parse supported PromQL into an immutable native expression.
+        """Parse supported PromQL/MetricsQL into an immutable native expression.
 
-        MetricsQL parsing raises ParseError(kind="unsupported"). Comments and
+        MetricsQL accepts a documented subset with mode="metricsql". Comments and
         formatting are discarded. No raw-expression fallback or evaluation occurs.
         Positive budgets override native defaults: 1 MiB input/output, 100,000
         tokens/expanded nodes, depth 64 (maximum 128), and 1,000,000 work units.

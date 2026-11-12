@@ -150,7 +150,7 @@ def parameter(cls, method, name):
     if cls == "QueryBuilder" and method == "parse":
         parsing = {
             "source": ("str", "Complete UTF-8 query source. Interior NUL is parsed rather than truncating input. Invalid or unsupported source raises ParseError; there is no raw fallback."),
-            "mode": ("QueryMode | str", "'promql' by default. 'metricsql' raises ParseError(kind='unsupported') until its parser is implemented. This does not change build()'s existing default mode."),
+            "mode": ("QueryMode | str", "'promql' by default. 'metricsql' accepts the common-query subset documented in the query parsing guide; advanced grammar may raise ParseError(kind='unsupported'). This does not change build()'s existing default mode."),
             "max_input_bytes": ("int | None", "Positive UTF-8 source byte limit; None uses 1 MiB. bool and values outside size_t are rejected."),
             "max_tokens": ("int | None", "Positive lexical-token limit excluding EOF; None uses 100,000. bool and values outside size_t are rejected."),
             "max_depth": ("int | None", "Recursive grammar depth from 1 through 128; None uses 64."),

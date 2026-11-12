@@ -32,7 +32,7 @@ pub struct McParseErrorInfo {
 }
 
 /// Parse a counted UTF-8 buffer into an owning immutable expression handle.
-/// Mode: 0 PromQL, 1 MetricsQL (currently explicitly unsupported). Return null on
+/// Mode: 0 PromQL, 1 MetricsQL (supported subset). Return null on
 /// failure. Release success with mc_expr_free. Input is borrowed only for this call.
 /// Interior NUL bytes are parsed, never treated as a source terminator.
 /// error_info is zeroed on entry; ABI argument/panic failures use mc_last_error

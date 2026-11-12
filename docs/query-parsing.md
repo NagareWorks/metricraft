@@ -3,8 +3,9 @@
 The Rust core can parse a supported subset of **Prometheus 3.16.0 PromQL** into
 the same immutable `Expr` graph used by the builder. This is development work
 for the next minor release. The development Python and C ABI bindings expose
-this parser; the published 0.3.0 package does not. MetricsQL parsing is not
-implemented yet. Existing builder and client APIs keep their behavior.
+this parser; the published 0.3.0 package does not. Common MetricsQL queries are
+also supported against **VictoriaMetrics 1.156.0 / MetricsQL parser 0.87.6**.
+Existing builder and client APIs keep their behavior.
 
 ## Python
 
@@ -172,7 +173,7 @@ for invalid literal windows/steps and literal division or modulo by zero, which
 are rejected while parsing. Redundant parentheses and literal signs may normalize.
 
 This is not a claim of complete PromQL or MetricsQL support. Explicit
-`Unsupported` errors cover MetricsQL mode,
+`Unsupported` errors cover
 duplicate grouping labels, zero offsets or extended modifiers placed before a
 range, non-finite durations, and non-UTF-8 bytes in strings. Regex validation currently supports a
 conservative RE2 subset: empty quoted blocks, leading-zero repetition counts,
@@ -185,6 +186,50 @@ PromQL strings containing U+FFFD are rendered with a Unicode escape, as required
 by its lexer. MetricsQL's identifier decoder cannot decode this escape
 in grouping or vector-matching labels; building those queries in MetricsQL mode
 returns an error instead of changing the label name.
+
+## MetricsQL parsing
+
+Pass `mode="metricsql"` to the existing parser; the result uses the same native
+nodes, ownership, traversal and path editing as PromQL. No separate parser or
+AST is installed in Python, and no ABI version change is needed.
+
+```python
+from metricraft import QueryBuilder as Q
+
+saved = 'sum by(job)(rate(requests_total{status=~"5.."})) > 100'
+original = Q.parse(saved, mode="metricsql")
+updated = original.replace_at([1], Q.from_scalar(200), mode="metricsql")
+assert updated.at_path([0]).shares_node(original.at_path([0]))
+text = updated.build("metricsql")
+```
+
+This first slice accepts ASCII metric/label names, selectors, ordinary strings,
+decimal/octal scalars, supported function calls (including implicit rollup windows
+and trailing commas), single-input aggregations, vector matching, and binary
+operators including `default`, `if` and `ifnot`. Literal ranges/subqueries accept
+lowercase fractional and step-relative durations such as `[2.5m]`, `[5m:2i]`,
+`[:1m]` and `[:]`. Offsets and literal or `start()`/`end()` timestamps are supported.
+Literal durations stay metadata; they do not allocate numeric expression trees.
+MetricsQL function names are case-insensitive; normalization preserves the case
+of metric names, labels and string values.
+
+MetricsQL comments end at a newline, not a carriage return. Raw strings drop
+carriage returns as upstream does. Unary minus and binary precedence follow
+MetricsQL's zero-subtraction grammar, including enclosing right-hand operands.
+The conformance job checks original and normalized queries against the pinned
+Go parser and evaluates both on VictoriaMetrics; selected cases also assert
+independently calculated values. These checks are separate from unit tests.
+
+Follow-up slices will add `WITH`, selector `or`, tuples/multi-input aggregations,
+computed strings and timestamps, `keep_metric_names`, aggregation limits,
+join prefixes/copy-all labels, fill modifiers, extended/escaped identifiers, non-decimal integer
+prefixes, scalar duration/size suffixes, placeholders and signed compound
+durations. Recognized deferred constructs raise `Unsupported`; other shapes can
+fail syntax or existing AST validation. In particular, zero windows/steps,
+duplicate grouping labels and some implicit type conversions remain subject to
+builder constraints. PromQL computed-duration syntax is not accepted in
+MetricsQL mode. The PromQL experimental flags do not enable additional MetricsQL
+grammar. This is a supported subset, not full MetricsQL text compatibility.
 
 ## Errors and resource limits
 

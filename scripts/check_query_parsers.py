@@ -14,6 +14,7 @@ from cases import cases, experimental_cases
 from migration import parser_cases
 from extensions import cases as extension_cases, FEATURES
 from parsing import check as check_native_parser
+from metricsql_parsing import check as check_metricsql_parser
 
 
 def main():
@@ -51,6 +52,7 @@ def main():
             ["promtool", "--enable-feature=promql-experimental-functions," + ",".join(FEATURES), "check", "rules", "--lint=none", str(rules)], check=True
         )
         check_native_parser(generated, Path(directory))
+        check_metricsql_parser(env)
     subprocess.run(
         ["go", "run", "-mod=readonly", "."],
         cwd=ROOT / "tests/conformance/metricsql",

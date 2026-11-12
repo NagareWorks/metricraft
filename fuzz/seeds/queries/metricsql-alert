@@ -1,0 +1,1 @@
+sum by(job)(rate(requests_total)) > 100 default vector(0)

@@ -1,5 +1,5 @@
 //! Bounded UTF-8 lexer. Tokens borrow source text; only decoded strings allocate.
-use super::{ParseError, ParseErrorKind};
+use super::{Mode, ParseError, ParseErrorKind};
 
 #[derive(Debug)]
 pub(super) enum Value<'a> {
@@ -30,6 +30,7 @@ pub(super) fn lex(
     source: &str,
     limit: usize,
     extended_names: bool,
+    mode: Mode,
 ) -> Result<Vec<Token<'_>>, ParseError> {
     let mut tokens = Vec::new();
     let mut pos = 0;
@@ -42,7 +43,7 @@ pub(super) fn lex(
         }
         if c == '#' {
             pos += source[pos..]
-                .find(['\n', '\r'])
+                .find(|c| c == '\n' || mode == Mode::PromQl && c == '\r')
                 .unwrap_or(source.len() - pos);
             continue;
         }
@@ -56,7 +57,7 @@ pub(super) fn lex(
         }
         let start = pos;
         let value = if matches!(c, '"' | '\'' | '`') {
-            let (value, end) = string(source, pos, c)?;
+            let (value, end) = string(source, pos, c, mode)?;
             pos = end;
             Value::String(value)
         } else if c.is_ascii_digit()
@@ -66,7 +67,18 @@ pub(super) fn lex(
                     .get(pos + 1)
                     .is_some_and(u8::is_ascii_digit)
         {
-            if source[pos..].starts_with("0x") || source[pos..].starts_with("0X") {
+            if mode == Mode::MetricsQl
+                && source[pos..]
+                    .get(..2)
+                    .is_some_and(|s| matches!(s, "0x" | "0X" | "0b" | "0B" | "0o" | "0O"))
+            {
+                return Err(ParseError::kind(
+                    ParseErrorKind::Unsupported,
+                    start,
+                    start + 2,
+                    "MetricsQL non-decimal literal parsing is not implemented yet",
+                ));
+            } else if source[pos..].starts_with("0x") || source[pos..].starts_with("0X") {
                 pos = super::numbers::hex_end(source, pos)
                     .map_err(|(end, message)| ParseError::new(start, end, message))?;
             } else {
@@ -96,6 +108,9 @@ pub(super) fn lex(
             }
             Value::Word(&source[start..pos])
         } else {
+            if mode == Mode::MetricsQl && (c == '\\' || c == '$' || c == '.' || !c.is_ascii()) {
+                return Err(ParseError::kind(ParseErrorKind::Unsupported, start, start + c.len_utf8(), "MetricsQL escaped/extended identifiers and placeholders are not implemented yet"));
+            }
             let two = source.get(pos..pos + 2).unwrap_or("");
             if matches!(two, "==" | "!=" | "=~" | "!~" | ">=" | "<=" | "</" | ">/") {
                 pos += 2;
@@ -130,20 +145,36 @@ pub(super) fn lex(
     Ok(tokens)
 }
 
-fn string(source: &str, start: usize, quote: char) -> Result<(String, usize), ParseError> {
+fn string(
+    source: &str,
+    start: usize,
+    quote: char,
+    mode: Mode,
+) -> Result<(String, usize), ParseError> {
     let mut bytes = Vec::new();
     let mut pos = start + 1;
     let error = |end, message| ParseError::new(start, end, message);
     while pos < source.len() {
         let c = source[pos..].chars().next().unwrap();
         pos += c.len_utf8();
-        if c == '\u{fffd}' {
+        if mode == Mode::PromQl && c == '\u{fffd}' {
             return Err(error(
                 pos,
                 "literal replacement character is rejected by PromQL; use a Unicode escape",
             ));
         }
         if c == quote {
+            if mode == Mode::MetricsQl
+                && quote == '`'
+                && source.as_bytes().get(pos - 2) == Some(&b'\\')
+            {
+                return Err(ParseError::kind(
+                    ParseErrorKind::Unsupported,
+                    start,
+                    pos,
+                    "escaped raw-string delimiters are not supported",
+                ));
+            }
             return String::from_utf8(bytes)
                 .map(|value| (value, pos))
                 .map_err(|_| {
@@ -156,6 +187,9 @@ fn string(source: &str, start: usize, quote: char) -> Result<(String, usize), Pa
                 });
         }
         if c != '\\' || quote == '`' {
+            if mode == Mode::MetricsQl && quote == '`' && c == '\r' {
+                continue;
+            }
             if quote != '`' && c == '\n' {
                 return Err(error(pos, "newline in quoted string"));
             }

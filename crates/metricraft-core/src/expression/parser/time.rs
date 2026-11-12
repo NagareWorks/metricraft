@@ -1,6 +1,6 @@
 //! Ranges, subqueries and time modifiers backed by the shared expression graph.
 use super::super::{Extra, Kind};
-use super::{Expr, ParseErrorKind as Error, Parser, Result};
+use super::{Expr, Mode, ParseErrorKind as Error, Parser, Result};
 
 impl Parser<'_> {
     pub(super) fn postfix(
@@ -10,6 +10,14 @@ impl Parser<'_> {
         mut grouped: bool,
         depth: usize,
     ) -> Result<Expr> {
+        if self.mode == Mode::MetricsQl {
+            // A grouped time target starts a new rollup layer. Flattening
+            // `(up @ 100) offset 1h` into `up @ 100 offset 1h` changes its time.
+            if grouped && (self.is("offset") || self.is("@")) {
+                expr = self.apply(start, "parenthesize", "", "", &[expr])?;
+            }
+            return self.vm_postfix(start, expr);
+        }
         loop {
             if grouped
                 && (self.is("offset") || self.is("@") || self.is("anchored") || self.is("smoothed"))

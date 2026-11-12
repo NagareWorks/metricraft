@@ -28,7 +28,7 @@ char *mc_expr_inspect(const McExpr *expr, uint32_t kind, uint32_t mode,
 
 /* Optional additive parsing symbol; older ABI-4 binaries may not export it.
  * These structures have a fixed layout. Zero option fields select defaults.
- * Mode: 0 PromQL; 1 MetricsQL (parsing currently unsupported).
+ * Mode: 0 PromQL; 1 MetricsQL (supported subset).
  * Flags: bit 0 experimental functions, 1 duration expressions,
  *        2 legacy extended-range opt-in (now stable), 3 binary fill modifiers,
  *        4 unquoted UTF-8 names (parser only; output uses quoted names). */

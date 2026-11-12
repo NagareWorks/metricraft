@@ -1,19 +1,26 @@
 //! Precedence, function calls, aggregations and vector matching.
 use super::super::{aggregation, Type};
-use super::{Expr, ParseErrorKind as Error, Parser, Result, Value};
+use super::{Expr, Mode, ParseErrorKind as Error, Parser, Result, Value};
 
 impl Parser<'_> {
-    pub(super) fn expression(&mut self, minimum: u8, depth: usize) -> Result<Expr> {
+    pub(super) fn expression(&mut self, minimum: i8, depth: usize) -> Result<Expr> {
+        self.expression_tail(minimum, depth).map(|(expr, _)| expr)
+    }
+
+    fn expression_tail(&mut self, minimum: i8, depth: usize) -> Result<(Expr, bool)> {
         if depth >= self.options.max_depth {
             return Err(self.error(Error::Limit, "parse depth limit exceeded"));
         }
         let start = self.current().start;
         let grouped = self.is("(");
-        let atom = self.atom(depth)?;
+        let atom = self.atom(minimum, depth)?;
         let mut left = self.postfix(start, atom, grouped, depth)?;
+        let mut consumed_binary = false;
         loop {
             let op = self.current().text().to_ascii_lowercase();
             let power = match op.as_str() {
+                "default" if self.mode == Mode::MetricsQl => -1,
+                "if" | "ifnot" if self.mode == Mode::MetricsQl => 0,
                 "or" => 1,
                 "and" | "unless" => 2,
                 "==" | "!=" | ">" | "<" | ">=" | "<=" => 3,
@@ -26,12 +33,14 @@ impl Parser<'_> {
             if power < minimum {
                 break;
             }
+            consumed_binary = true;
             self.index += 1;
-            let modifiers = self.modifiers()?;
+            let modifiers = self.modifiers(&op)?;
             let right = self.expression(if op == "^" { power } else { power + 1 }, depth + 1)?;
             // Prometheus discards empty vector matching (including its grouping)
             // when either operand is scalar. Fill modifiers still require vectors.
-            let ignore_matching = (left.0.ty == Type::Scalar || right.0.ty == Type::Scalar)
+            let ignore_matching = self.mode == Mode::PromQl
+                && (left.0.ty == Type::Scalar || right.0.ty == Type::Scalar)
                 && modifiers.iter().any(|(name, args)| {
                     matches!(name.as_str(), "on" | "ignoring") && args.is_empty()
                 });
@@ -49,14 +58,31 @@ impl Parser<'_> {
                 left = self.apply(start, &name, "", "", &args)?;
             }
         }
-        Ok(left)
+        Ok((left, consumed_binary))
     }
 
-    fn atom(&mut self, depth: usize) -> Result<Expr> {
+    fn atom(&mut self, minimum: i8, depth: usize) -> Result<Expr> {
         let start = self.current().start;
         if self.eat("-") || self.eat("+") {
             let negative = self.tokens[self.index - 1].text() == "-";
-            let value = self.expression(6, depth + 1)?;
+            // MetricsQL lowers unary minus to zero subtraction before balancing
+            // operators. Respect the enclosing RHS precedence as well.
+            let power = if self.mode == Mode::MetricsQl {
+                minimum.max(5)
+            } else {
+                6
+            };
+            let (value, consumed_binary) = self.expression_tail(power, depth + 1)?;
+            if self.mode == Mode::MetricsQl && consumed_binary && self.vm_rollup_start() {
+                // Balancing a unary minus may consume following arithmetic,
+                // but a leftover postfix belongs to its original RHS. It must
+                // not attach to the entire newly negated product.
+                return Err(self.error(Error::Syntax, "unexpected rollup after a binary operand"));
+            }
+            if !negative && self.mode == Mode::MetricsQl {
+                // Upstream removes unary plus before balancing binary nodes.
+                return Ok(value);
+            }
             return self.apply(
                 start,
                 if negative { "negate" } else { "positive" },
@@ -69,7 +95,7 @@ impl Parser<'_> {
             return self.selector(start, "");
         }
         if self.eat("(") {
-            let value = self.expression(0, depth + 1)?;
+            let value = self.expression(-1, depth + 1)?;
             self.expect(")")?;
             return Ok(value);
         }
@@ -88,13 +114,21 @@ impl Parser<'_> {
                 let name = (*word).to_owned();
                 let keyword = name.to_ascii_lowercase();
                 self.index += 1;
+                if self.mode == Mode::MetricsQl && keyword == "with" && self.is("(") {
+                    return Err(self.error(
+                        Error::Unsupported,
+                        "MetricsQL WITH parsing is not implemented yet",
+                    ));
+                }
                 if matches!(keyword.as_str(), "inf" | "nan") {
                     return self.apply(start, "number", &keyword, "", &[]);
                 }
-                if matches!(
-                    keyword.as_str(),
-                    "bool" | "on" | "ignoring" | "group_left" | "group_right" | "atan2"
-                ) {
+                if self.mode == Mode::PromQl
+                    && matches!(
+                        keyword.as_str(),
+                        "bool" | "on" | "ignoring" | "group_left" | "group_right" | "atan2"
+                    )
+                {
                     return Err(super::ParseError::kind(
                         Error::Syntax,
                         start,
@@ -119,19 +153,37 @@ impl Parser<'_> {
                         Ok(expr)
                     };
                 }
+                if self.mode == Mode::MetricsQl
+                    && aggregation::is_name(&keyword)
+                    && keyword != "limit_ratio" // PromQL-only aggregate; an ordinary VM metric.
+                    && matches!(self.current().value, Value::Word(_))
+                    && !self.is("offset")
+                {
+                    // VM reads an aggregate name followed by an identifier as
+                    // an aggregation, even when that identifier is `or`/`and`.
+                    return Err(self.error(Error::Syntax, "expected an aggregation modifier"));
+                }
                 if self.is("(") {
-                    let mut args = self.arguments(depth, name == "info")?;
-                    if name == "histogram_quantiles" && args.len() >= 2 {
+                    let mut args =
+                        self.arguments(depth, self.mode == Mode::PromQl && name == "info")?;
+                    if self.mode == Mode::PromQl && name == "histogram_quantiles" && args.len() >= 2
+                    {
                         let vector = args.remove(0);
                         args.push(vector);
                         return self.apply(start, "histogram_quantiles_auto", "", "", &args);
                     }
-                    return self.apply(start, "call", &name, "", &args);
+                    let function = if self.mode == Mode::MetricsQl {
+                        &keyword
+                    } else {
+                        &name
+                    };
+                    return self.apply(start, "call", function, "", &args);
                 }
                 if !super::names::valid(
                     &name,
                     true,
-                    self.options.build.syntax_features & super::names::FEATURE != 0,
+                    self.mode == Mode::PromQl
+                        && self.options.build.syntax_features & super::names::FEATURE != 0,
                 ) {
                     return Err(super::ParseError::kind(
                         Error::Syntax,
@@ -147,6 +199,10 @@ impl Parser<'_> {
     }
 
     pub(super) fn number(&mut self, start: usize, text: &str) -> Result<Expr> {
+        if self.mode == Mode::MetricsQl {
+            let value = self.vm_number(start, text)?;
+            return self.apply(start, "number", &value.to_string(), "", &[]);
+        }
         let value = super::numbers::number(text)
             .map_err(|message| super::ParseError::new(start, start + text.len(), message))?;
         self.apply(start, "number", &value.to_string(), "", &[])
@@ -161,7 +217,7 @@ impl Parser<'_> {
         loop {
             let start = self.current().start;
             let preserve_group = info && args.len() == 1 && self.is("(");
-            let value = self.expression(0, depth + 1)?;
+            let value = self.expression(-1, depth + 1)?;
             // info's second argument must be a direct selector, not a grouped one.
             // Keep that syntactic distinction until the builder validates the call.
             args.push(if preserve_group {
@@ -174,6 +230,10 @@ impl Parser<'_> {
                 break;
             }
             if self.is(")") {
+                if self.mode == Mode::MetricsQl {
+                    self.index += 1;
+                    break;
+                }
                 return Err(self.error(Error::Syntax, "trailing comma in function arguments"));
             }
         }
@@ -190,7 +250,7 @@ impl Parser<'_> {
         }
     }
 
-    fn modifiers(&mut self) -> Result<Vec<(String, Vec<Expr>)>> {
+    fn modifiers(&mut self, operator: &str) -> Result<Vec<(String, Vec<Expr>)>> {
         let mut result = Vec::new();
         if self.eat("bool") {
             result.push(("bool".into(), vec![]));
@@ -204,7 +264,24 @@ impl Parser<'_> {
                 self.index += 1;
                 let args = if self.is("(") { self.labels()? } else { vec![] };
                 result.push((op, args));
+                if self.mode == Mode::MetricsQl && self.is("prefix") {
+                    return Err(self.error(
+                        Error::Unsupported,
+                        "MetricsQL join prefixes are not implemented yet",
+                    ));
+                }
             }
+        }
+        if self.mode == Mode::MetricsQl
+            && matches!(
+                operator,
+                "and" | "or" | "unless" | "default" | "if" | "ifnot"
+            )
+            && (self.is("fill") || self.is("fill_left") || self.is("fill_right"))
+        {
+            // VM reserves these after set operators even without `(`. A
+            // parenthesized metric operand remains unambiguous and legal.
+            return Err(self.error(Error::Syntax, "fill modifiers cannot follow set operators"));
         }
         while (self.is("fill") || self.is("fill_left") || self.is("fill_right"))
             && self
@@ -212,6 +289,12 @@ impl Parser<'_> {
                 .get(self.index + 1)
                 .is_some_and(|t| t.text() == "(")
         {
+            if self.mode == Mode::MetricsQl {
+                return Err(self.error(
+                    Error::Unsupported,
+                    "MetricsQL fill modifiers are not yet supported by the shared AST",
+                ));
+            }
             let op = self.current().text().to_ascii_lowercase();
             self.index += 1;
             self.expect("(")?;

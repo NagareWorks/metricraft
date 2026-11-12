@@ -129,7 +129,9 @@ fn malformed_or_semantically_invalid_queries_fail_without_raw_fallbacks() {
 #[test]
 fn unsupported_and_dialect_errors_are_explicit() {
     assert_eq!(
-        Expr::parse("up", Mode::MetricsQl).unwrap_err().kind,
+        Expr::parse("WITH (x = up) x", Mode::MetricsQl)
+            .unwrap_err()
+            .kind,
         ParseErrorKind::Unsupported
     );
     assert_eq!(

@@ -20,40 +20,36 @@ pub fn exercise(data: &[u8]) {
             syntax_features: 30,
         },
     };
-    match Expr::parse_with_options(source, Mode::PromQl, options) {
-        Ok(expr) => {
-            let output = expr
-                .build_with_options(Mode::PromQl, options.build)
-                .unwrap();
-            let expanded = ParseOptions {
-                max_input_bytes: 131_072,
-                max_tokens: 32_768,
-                max_depth: 128,
-                max_work: 1_000_000,
-                ..options
-            };
-            match Expr::parse_with_options(&output, Mode::PromQl, expanded) {
-                Ok(again) => assert_eq!(
-                    again
-                        .build_with_options(Mode::PromQl, options.build)
-                        .unwrap(),
-                    output
-                ),
-                // Canonical parentheses may exceed recursion limits for a long flat input.
-                Err(error) => assert_eq!(
-                    error.kind,
-                    ParseErrorKind::Limit,
-                    "{source:?} -> {output:?}: {error}"
-                ),
+    for mode in [Mode::PromQl, Mode::MetricsQl] {
+        match Expr::parse_with_options(source, mode, options) {
+            Ok(expr) => {
+                let output = expr.build_with_options(mode, options.build).unwrap();
+                let expanded = ParseOptions {
+                    max_input_bytes: 131_072,
+                    max_tokens: 32_768,
+                    max_depth: 128,
+                    max_work: 1_000_000,
+                    ..options
+                };
+                match Expr::parse_with_options(&output, mode, expanded) {
+                    Ok(again) => assert_eq!(
+                        again.build_with_options(mode, options.build).unwrap(),
+                        output
+                    ),
+                    // Canonical parentheses may exceed recursion limits for a long flat input.
+                    Err(error) => assert_eq!(
+                        error.kind,
+                        ParseErrorKind::Limit,
+                        "{source:?} -> {output:?}: {error}"
+                    ),
+                }
+                let unchanged = expr.replace_at(&[], &expr, mode, options.build).unwrap();
+                assert!(unchanged.shares_node(&expr));
             }
-            let unchanged = expr
-                .replace_at(&[], &expr, Mode::PromQl, options.build)
-                .unwrap();
-            assert!(unchanged.shares_node(&expr));
-        }
-        Err(error) => {
-            assert!(error.start <= error.end && error.end <= source.len());
-            assert!(source.is_char_boundary(error.start) && source.is_char_boundary(error.end));
+            Err(error) => {
+                assert!(error.start <= error.end && error.end <= source.len());
+                assert!(source.is_char_boundary(error.start) && source.is_char_boundary(error.end));
+            }
         }
     }
 }

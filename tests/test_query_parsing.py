@@ -56,8 +56,8 @@ def test_parse_error_survives_copy_and_worker_process_propagation():
 
 
 def test_dialect_and_experimental_features_are_explicit():
-    with pytest.raises(ParseError, match="MetricsQL parsing") as failure:
-        Q.parse("up", "metricsql")
+    with pytest.raises(ParseError, match="MetricsQL WITH") as failure:
+        Q.parse("WITH (x = up) x", "metricsql")
     assert failure.value.kind == "unsupported"
     source = 'sort_by_label(up, "job")'
     with pytest.raises(ParseError, match="experimental_functions"):
@@ -110,3 +110,25 @@ def test_parse_errors_and_results_are_independent_between_threads():
         return Q.parse("up").where_eq("worker", str(i)).build("promql")
     with ThreadPoolExecutor(max_workers=8) as executor:
         assert list(executor.map(run, range(32))) == ['up{worker="%s"}' % i for i in range(32)]
+
+
+def test_metricsql_parse_edit_and_release_share_unchanged_subtrees():
+    original = Q.parse('sum by(job)(rate(requests_total)) > 100', 'metricsql')
+    query = original.at_path([0])
+    edited = original.replace_at([1], Q.from_scalar(200), 'metricsql')
+    assert edited.at_path([0]).shares_node(query)
+    assert original.build('metricsql').endswith(' > 100)')
+    assert edited.build('metricsql').endswith(' > 200)')
+    with pytest.raises(ValueError):
+        original.build('promql')
+    del original
+    gc.collect()
+    assert query.build('metricsql') == 'sum by (job) (rate(requests_total))'
+    assert Q.parse(edited.build('metricsql'), 'metricsql').build('metricsql') == edited.build('metricsql')
+
+
+@pytest.mark.parametrize('mode', ['promql', 'metricsql'])
+def test_parse_budgets_cover_both_dialects(mode):
+    with pytest.raises(ParseError) as failure:
+        Q.parse('sum(rate(up[5m]))', mode, max_tokens=2)
+    assert failure.value.kind == 'limit'

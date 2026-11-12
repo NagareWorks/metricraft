@@ -13,6 +13,11 @@ fn hex(text: &str) -> String {
 
 fn main() {
     let utf8_names = std::env::args().any(|arg| arg == "--unquoted-utf8-names");
+    let mode = if std::env::args().any(|arg| arg == "--metricsql") {
+        Mode::MetricsQl
+    } else {
+        Mode::PromQl
+    };
     let options = ParseOptions {
         build: BuildOptions {
             experimental_functions: true,
@@ -28,16 +33,12 @@ fn main() {
             .map(|i| u8::from_str_radix(&line[i..i + 2], 16).unwrap())
             .collect();
         let input = String::from_utf8(bytes).unwrap();
-        match Expr::parse_with_options(&input, Mode::PromQl, options) {
+        match Expr::parse_with_options(&input, mode, options) {
             Ok(expr) => {
-                let text = expr
-                    .build_with_options(Mode::PromQl, options.build)
-                    .unwrap();
-                let reparsed = Expr::parse_with_options(&text, Mode::PromQl, options).unwrap();
+                let text = expr.build_with_options(mode, options.build).unwrap();
+                let reparsed = Expr::parse_with_options(&text, mode, options).unwrap();
                 assert_eq!(
-                    reparsed
-                        .build_with_options(Mode::PromQl, options.build)
-                        .unwrap(),
+                    reparsed.build_with_options(mode, options.build).unwrap(),
                     text
                 );
                 println!("ok\t{}", hex(&text));

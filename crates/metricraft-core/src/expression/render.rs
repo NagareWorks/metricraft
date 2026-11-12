@@ -139,7 +139,19 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
             emit(Text(")"));
         }
         Kind::Range(child, window) => {
+            // VM ranges on expressions are implicit subqueries. Delimit the
+            // complete target, including unary and already time-shifted nodes.
+            let grouped = matches!(
+                child.0.kind,
+                Kind::Unary(..) | Kind::Offset(..) | Kind::At(..)
+            ) || matches!(child.0.kind, Kind::Number(n) if n.is_sign_negative());
+            if grouped {
+                emit(Text("("));
+            }
             emit(Child(child));
+            if grouped {
+                emit(Text(")"));
+            }
             emit(Text("["));
             emit(Text(window));
             emit(Text("]"));
@@ -180,7 +192,11 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
                 return;
             }
             emit(Text("("));
-            let protect_sign = binary.op == "^"
+            // MetricsQL lowers unary minus to `0 - value`. Multiplicative
+            // operators would otherwise be absorbed into that subtraction.
+            // Use the same harmless grouping in PromQL so the shared cached
+            // output-byte count remains exact in both dialects.
+            let protect_sign = matches!(binary.op.as_str(), "^" | "*" | "/" | "%" | "atan2")
                 && (matches!(binary.lhs.0.kind, Kind::Unary(..))
                     || matches!(binary.lhs.0.kind, Kind::Number(n) if n.is_sign_negative()));
             // A parenthesized computed offset greedily consumes following
@@ -257,12 +273,26 @@ fn parts<'a>(kind: &'a Kind, mode: Mode, mut emit: impl FnMut(Part<'a>)) {
             emit(Text("]"));
         }
         Kind::Offset(child, window) => {
+            let grouped = matches!(child.0.kind, Kind::Unary(..));
+            if grouped {
+                emit(Text("("));
+            }
             emit(Child(child));
+            if grouped {
+                emit(Text(")"));
+            }
             emit(Text(" offset "));
             emit(Text(window));
         }
         Kind::At(child, value) => {
+            let grouped = matches!(child.0.kind, Kind::Unary(..));
+            if grouped {
+                emit(Text("("));
+            }
             emit(Child(child));
+            if grouped {
+                emit(Text(")"));
+            }
             emit(Text(" @ "));
             emit(Text(value));
         }

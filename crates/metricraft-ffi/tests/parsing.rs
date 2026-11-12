@@ -117,9 +117,10 @@ fn parse_arguments_limits_and_dialect_fail_without_partial_handles() {
         assert_eq!(info.kind, 0);
         assert!(mc_expr_parse(b"up".as_ptr(), 2, 99, ptr::null(), &mut info).is_null());
         assert!(message().contains("query mode"));
-        assert!(mc_expr_parse(b"up".as_ptr(), 2, 1, ptr::null(), &mut info).is_null());
+        let source = b"WITH (x = up) x";
+        assert!(mc_expr_parse(source.as_ptr(), source.len(), 1, ptr::null(), &mut info).is_null());
         assert_eq!(info.kind, 4);
-        assert!(message().contains("MetricsQL parsing"));
+        assert!(message().contains("MetricsQL WITH"));
         for options in [
             McParseOptions {
                 max_input_bytes: 1,
@@ -161,5 +162,28 @@ fn parsing_errors_are_per_call_and_thread_local() {
         .collect();
     for worker in workers {
         worker.join().unwrap();
+    }
+}
+
+#[test]
+fn metricsql_uses_the_existing_counted_entrypoint_and_owns_its_source() {
+    unsafe {
+        let mut source = b"sum(rate(up)) > 10".to_vec();
+        let mut info = McParseErrorInfo::default();
+        let expr = mc_expr_parse(source.as_ptr(), source.len(), 1, ptr::null(), &mut info);
+        assert!(!expr.is_null(), "{}", message());
+        assert_eq!(info.kind, 0);
+        source.fill(0);
+        drop(source);
+        let output = mc_expr_build(expr, 1);
+        assert!(!output.is_null(), "{}", message());
+        assert_eq!(
+            CStr::from_ptr(output).to_str().unwrap(),
+            "(sum (rate(up)) > 10)"
+        );
+        mc_string_free(output);
+        assert!(mc_expr_build(expr, 0).is_null());
+        assert!(message().contains("MetricsQL"));
+        mc_expr_free(expr);
     }
 }

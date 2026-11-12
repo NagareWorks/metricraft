@@ -122,6 +122,9 @@ def evaluate(config, mode, start, output, report, matrix=None):
         # Direct builder arguments select the backend too; persisted strings use
         # the already chosen build mode recorded above.
         compare(client.query(generated[0].query, time=start + 600), generated[0].expected, start + 600)
+        if mode == "metricsql":
+            from metricsql_parsing import check_results
+            check_results(client, start, report, compare)
         if mode == "promql":
             from parsing import check_extended_results
             check_extended_results(client, start, report, compare)

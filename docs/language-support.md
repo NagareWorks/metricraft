@@ -28,7 +28,7 @@ Some shared methods also have dialect-specific argument forms; a method without
 an exclusive badge is not a guarantee that every call form works in both languages.
 
 This is a query builder and HTTP client with an unreleased
-[bounded PromQL parser and immutable AST editing API](query-parsing.md).
+[bounded query parser and immutable AST editing API](query-parsing.md).
 Backend calculations, storage, staleness and native-histogram data handling
 belong to the selected server. Existing query strings can go directly to the client.
 Numeric/duration input formats are normalized; generated text has no comments or

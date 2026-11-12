@@ -1,48 +1,49 @@
 //! Validated aggregation construction. Grouping remains an immutable derivation.
 use super::{labels, Expr, Kind, Mode, Result, Type};
 
+pub(super) const NAMES: &[&str] = &[
+    "sum",
+    "avg",
+    "min",
+    "max",
+    "count",
+    "stddev",
+    "stdvar",
+    "group",
+    "topk",
+    "bottomk",
+    "quantile",
+    "count_values",
+    "limitk",
+    "limit_ratio",
+    "any",
+    "median",
+    "mode",
+    "mad",
+    "outliersk",
+    "outliers_mad",
+    "outliers_iqr",
+    "distinct",
+    "geomean",
+    "histogram",
+    "quantiles",
+    "share",
+    "sum2",
+    "zscore",
+    "topk_avg",
+    "topk_last",
+    "topk_max",
+    "topk_median",
+    "topk_min",
+    "bottomk_avg",
+    "bottomk_last",
+    "bottomk_max",
+    "bottomk_median",
+    "bottomk_min",
+];
+
 pub(super) fn is_name(name: &str) -> bool {
-    matches!(
-        name,
-        "sum"
-            | "avg"
-            | "min"
-            | "max"
-            | "count"
-            | "stddev"
-            | "stdvar"
-            | "group"
-            | "topk"
-            | "bottomk"
-            | "quantile"
-            | "count_values"
-            | "limitk"
-            | "limit_ratio"
-            | "any"
-            | "median"
-            | "mode"
-            | "mad"
-            | "outliersk"
-            | "outliers_mad"
-            | "outliers_iqr"
-            | "distinct"
-            | "geomean"
-            | "histogram"
-            | "quantiles"
-            | "share"
-            | "sum2"
-            | "zscore"
-            | "topk_avg"
-            | "topk_last"
-            | "topk_max"
-            | "topk_median"
-            | "topk_min"
-            | "bottomk_avg"
-            | "bottomk_last"
-            | "bottomk_max"
-            | "bottomk_median"
-            | "bottomk_min"
-    )
+    NAMES.contains(&name)
 }
 
 pub(super) fn construct(name: &str, args: &[Expr]) -> Result<Expr> {
